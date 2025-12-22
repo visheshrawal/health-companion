@@ -157,7 +157,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       // For verification during signup
-      await signIn("password", { email: email.trim(), code: otp, flow: "signUp" });
+      await signIn("password", { email: email.trim(), password, code: otp, flow: "signUp" });
       // Redirect handled by useEffect
     } catch (err) {
       console.error(err);
@@ -240,7 +240,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           </div>
         </div>
 
-        <Card className="border-primary/10 shadow-xl">
+        <Card className="border-primary/10 shadow-xl gap-0">
           <CardHeader className="space-y-1 text-center">
             <CardTitle className="text-2xl">
               {flow === "signIn" && "Welcome Back"}
