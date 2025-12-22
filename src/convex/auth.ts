@@ -39,6 +39,15 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         },
         sendVerificationRequest,
       }),
+      // Explicitly define password requirements to override defaults and match frontend
+      validatePasswordRequirements: (password: string) => {
+        if (password.length < 8) {
+          return "Password must be at least 8 characters long";
+        }
+        // Frontend handles complexity checks (uppercase, number, special char)
+        // We enforce length here as a baseline security measure
+        return;
+      },
     }),
   ],
 });
