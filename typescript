@@ -1,0 +1,11 @@
+import Profile from "../Profile";
+import PatientNav from "@/components/PatientNav";
+
+export default function ProfileView() {
+  return (
+    <div className="pb-20">
+      <Profile />
+      <PatientNav />
+    </div>
+  );
+}

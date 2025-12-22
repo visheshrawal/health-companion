@@ -2,42 +2,75 @@ import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { Infer, v } from "convex/values";
 
-// default user roles. can add / remove based on the project as needed
 export const ROLES = {
-  ADMIN: "admin",
-  USER: "user",
-  MEMBER: "member",
+  PATIENT: "patient",
+  DOCTOR: "doctor",
 } as const;
 
 export const roleValidator = v.union(
-  v.literal(ROLES.ADMIN),
-  v.literal(ROLES.USER),
-  v.literal(ROLES.MEMBER),
+  v.literal(ROLES.PATIENT),
+  v.literal(ROLES.DOCTOR),
 );
-export type Role = Infer<typeof roleValidator>;
 
 const schema = defineSchema(
   {
-    // default auth tables using convex auth.
-    ...authTables, // do not remove or modify
-
-    // the users table is the default users table that is brought in by the authTables
+    ...authTables,
     users: defineTable({
-      name: v.optional(v.string()), // name of the user. do not remove
-      image: v.optional(v.string()), // image of the user. do not remove
-      email: v.optional(v.string()), // email of the user. do not remove
-      emailVerificationTime: v.optional(v.number()), // email verification time. do not remove
-      isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
+      name: v.optional(v.string()),
+      image: v.optional(v.string()),
+      email: v.optional(v.string()),
+      emailVerificationTime: v.optional(v.number()),
+      isAnonymous: v.optional(v.boolean()),
+      role: v.optional(roleValidator),
+      
+      // Patient specific
+      age: v.optional(v.number()),
+      conditions: v.optional(v.array(v.string())),
+      emergencyContact: v.optional(v.object({
+        name: v.string(),
+        phone: v.string(),
+      })),
 
-      role: v.optional(roleValidator), // role of the user. do not remove
-    }).index("email", ["email"]), // index for the email. do not remove or modify
+      // Doctor specific
+      specialization: v.optional(v.string()),
+      bio: v.optional(v.string()),
+    }).index("email", ["email"])
+      .index("by_role", ["role"]),
 
-    // add other tables here
+    medications: defineTable({
+      userId: v.id("users"),
+      name: v.string(),
+      dosage: v.string(),
+      frequency: v.string(),
+      startDate: v.number(),
+      endDate: v.optional(v.number()),
+      takenLog: v.array(v.string()), // Array of YYYY-MM-DD strings
+      prescriptionId: v.optional(v.id("prescriptions")),
+      active: v.boolean(),
+    }).index("by_user", ["userId"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    appointments: defineTable({
+      patientId: v.id("users"),
+      doctorId: v.id("users"),
+      date: v.number(), // timestamp
+      status: v.union(v.literal("scheduled"), v.literal("completed"), v.literal("cancelled")),
+      notes: v.optional(v.string()),
+    })
+    .index("by_patient", ["patientId"])
+    .index("by_doctor", ["doctorId"])
+    .index("by_doctor_and_date", ["doctorId", "date"]),
+
+    prescriptions: defineTable({
+      doctorId: v.id("users"),
+      patientId: v.id("users"),
+      appointmentId: v.id("appointments"),
+      notes: v.optional(v.string()),
+      medications: v.array(v.object({
+        name: v.string(),
+        dosage: v.string(),
+        frequency: v.string(),
+      })),
+    }).index("by_patient", ["patientId"]),
   },
   {
     schemaValidation: false,
