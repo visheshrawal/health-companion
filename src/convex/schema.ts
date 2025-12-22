@@ -92,6 +92,14 @@ const schema = defineSchema(
         frequency: v.string(),
       })),
     }).index("by_patient", ["patientId"]),
+
+    medicalRecords: defineTable({
+      userId: v.id("users"),
+      title: v.string(),
+      storageId: v.id("_storage"),
+      format: v.string(),
+      uploadedAt: v.number(),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,

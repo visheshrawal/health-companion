@@ -6,18 +6,27 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Loader2, User, Stethoscope, LogOut, CheckCircle2 } from "lucide-react";
+import { Loader2, User, Stethoscope, LogOut, CheckCircle2, Edit2, Upload, FileText, Trash2, Camera } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function Profile() {
   const user = useQuery(api.users.currentUser);
   const updateProfile = useMutation(api.users.updateProfile);
+  const generateUploadUrl = useMutation(api.users.generateUploadUrl);
+  const medicalRecords = useQuery(api.medicalRecords.list);
+  const addMedicalRecord = useMutation(api.medicalRecords.add);
+  const removeMedicalRecord = useMutation(api.medicalRecords.remove);
+  
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recordInputRef = useRef<HTMLInputElement>(null);
 
   // Step state
   const [step, setStep] = useState(1);
@@ -49,6 +58,11 @@ export default function Profile() {
         // If role is set but profile not completed, go to step 2
         if (!user.profileCompleted) {
           setStep(2);
+          setIsEditing(true); // Force edit mode for incomplete profile
+        } else {
+          // Profile completed, default to view mode
+          // Only set isEditing to true if we explicitly want to edit, otherwise false
+          // But we need to populate the fields
         }
       }
       
@@ -75,6 +89,58 @@ export default function Profile() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsLoading(true);
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await result.json();
+      
+      await updateProfile({ image: storageId });
+      toast.success("Profile photo updated");
+    } catch (error) {
+      toast.error("Failed to upload photo");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRecordUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsLoading(true);
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const { storageId } = await result.json();
+      
+      await addMedicalRecord({
+        title: file.name,
+        storageId: storageId as Id<"_storage">,
+        format: file.type,
+      });
+      toast.success("Medical record uploaded");
+    } catch (error) {
+      toast.error("Failed to upload record");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleStep1Submit = async (e: React.FormEvent) => {
@@ -128,9 +194,10 @@ export default function Profile() {
         });
         navigate("/doctor");
       }
-      toast.success("Profile completed successfully!");
+      toast.success("Profile updated successfully!");
+      setIsEditing(false);
     } catch (error) {
-      toast.error("Failed to complete profile");
+      toast.error("Failed to update profile");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -141,6 +208,183 @@ export default function Profile() {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
+  // Read-Only View
+  if (user?.profileCompleted && !isEditing) {
+    return (
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <h1 className="text-3xl font-bold">My Profile</h1>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsEditing(true)}>
+                <Edit2 className="mr-2 h-4 w-4" /> Update Details
+              </Button>
+              <Button variant="destructive" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" /> Sign Out
+              </Button>
+            </div>
+          </div>
+
+          <Card className="glass overflow-hidden">
+            <div className="h-32 bg-gradient-to-r from-primary/20 to-secondary/20" />
+            <CardContent className="relative pt-0">
+              <div className="flex flex-col md:flex-row gap-6 items-start">
+                <div className="-mt-16 relative group">
+                  <div className="h-32 w-32 rounded-full border-4 border-background bg-muted flex items-center justify-center overflow-hidden shadow-xl">
+                    {user.imageUrl ? (
+                      <img src={user.imageUrl} alt={user.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <User className="h-16 w-16 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div 
+                    className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="h-8 w-8 text-white" />
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleImageUpload} 
+                  />
+                </div>
+                
+                <div className="mt-4 md:mt-0 flex-1 space-y-1">
+                  <h2 className="text-2xl font-bold">{user.name}</h2>
+                  <p className="text-muted-foreground capitalize">{user.role}</p>
+                  {user.role === "doctor" && (
+                    <p className="text-sm text-primary font-medium">{user.doctorProfile?.specialization}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-8 grid md:grid-cols-2 gap-8">
+                {user.role === "patient" ? (
+                  <>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-lg border-b pb-2">Personal Information</h3>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Date of Birth</span>
+                          <p className="font-medium">{user.patientProfile?.dateOfBirth}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Sex</span>
+                          <p className="font-medium capitalize">{user.patientProfile?.sex}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Blood Group</span>
+                          <p className="font-medium">{user.patientProfile?.bloodGroup}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-lg border-b pb-2">Medical Information</h3>
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Conditions</span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {user.patientProfile?.conditions.map((c, i) => (
+                              <span key={i} className="bg-primary/10 text-primary px-2 py-1 rounded-md">{c}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Allergies</span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {user.patientProfile?.allergies.map((c, i) => (
+                              <span key={i} className="bg-destructive/10 text-destructive px-2 py-1 rounded-md">{c}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-4 col-span-2">
+                    <h3 className="font-semibold text-lg border-b pb-2">Professional Details</h3>
+                    <div className="grid md:grid-cols-2 gap-6 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">License Number</span>
+                        <p className="font-medium">{user.doctorProfile?.licenseNumber}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Affiliation</span>
+                        <p className="font-medium">{user.doctorProfile?.affiliation}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Bio</span>
+                        <p className="mt-1">{user.doctorProfile?.bio}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Medical Records Section */}
+          {user.role === "patient" && (
+            <Card className="glass">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Medical Records</CardTitle>
+                  <CardDescription>Upload and manage your medical history documents.</CardDescription>
+                </div>
+                <Button onClick={() => recordInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" /> Upload Record
+                </Button>
+                <input 
+                  type="file" 
+                  ref={recordInputRef} 
+                  className="hidden" 
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" 
+                  onChange={handleRecordUpload} 
+                />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {medicalRecords?.map((record) => (
+                    <div key={record._id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-accent/50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium truncate max-w-[200px] md:max-w-md">{record.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(record.uploadedAt).toLocaleDateString()} • {record.format.split('/')[1] || 'file'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="sm" asChild>
+                          <a href={record.url || "#"} target="_blank" rel="noopener noreferrer">View</a>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => removeMedicalRecord({ id: record._id })}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  {medicalRecords?.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-xl">
+                      No records uploaded yet.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Edit/Onboarding View
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
       <div className="absolute top-4 right-4">
@@ -159,10 +403,10 @@ export default function Profile() {
             <span className="text-sm text-muted-foreground">Step {step} of 2</span>
           </div>
           <CardTitle className="text-2xl">
-            {step === 1 ? "Create Your Account" : role === "patient" ? "Complete Your Health Profile" : "Complete Your Professional Profile"}
+            {step === 1 ? "Account Details" : role === "patient" ? "Health Profile" : "Professional Profile"}
           </CardTitle>
           <CardDescription>
-            {step === 1 ? "Let's get you set up with the right account type." : "Help us personalize your experience."}
+            {step === 1 ? "Update your basic account information." : "Update your detailed profile information."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -174,7 +418,7 @@ export default function Profile() {
               </div>
 
               <div className="space-y-2">
-                <Label>I am signing up as a:</Label>
+                <Label>I am a:</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <div
                     className={`cursor-pointer border rounded-xl p-6 flex flex-col items-center gap-3 transition-all ${role === "patient" ? "border-primary bg-primary/10 ring-2 ring-primary" : "hover:bg-accent"}`}
@@ -304,20 +548,11 @@ export default function Profile() {
                 <Button type="button" variant="outline" onClick={() => setStep(1)}>Back</Button>
                 <Button type="submit" className="flex-1" disabled={isLoading}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                  Save & Continue to Dashboard
+                  Save & View Profile
                 </Button>
-              </div>
-              <div className="text-center">
-                 <Button type="button" variant="link" className="text-xs text-muted-foreground" onClick={() => navigate(role === "patient" ? "/patient" : "/doctor")}>
-                   Skip for now (Profile will be incomplete)
-                 </Button>
               </div>
             </form>
           )}
-          
-          <div className="mt-6 text-center text-xs text-muted-foreground">
-            Your data is protected and used solely for your care.
-          </div>
         </CardContent>
       </Card>
     </div>

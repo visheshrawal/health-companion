@@ -17,7 +17,13 @@ export const currentUser = query({
       return null;
     }
 
-    return user;
+    // If user has an image (storageId), get the URL
+    let imageUrl = null;
+    if (user.image) {
+      imageUrl = await ctx.storage.getUrl(user.image as any);
+    }
+
+    return { ...user, imageUrl };
   },
 });
 
@@ -37,6 +43,7 @@ export const getCurrentUser = async (ctx: QueryCtx) => {
 export const updateProfile = mutation({
   args: {
     name: v.optional(v.string()),
+    image: v.optional(v.string()),
     role: v.optional(v.string()), // "patient" or "doctor"
     profileCompleted: v.optional(v.boolean()),
     
@@ -96,5 +103,22 @@ export const listDoctors = query({
       .query("users")
       .withIndex("by_role", (q) => q.eq("role", ROLES.DOCTOR))
       .collect();
+  },
+});
+
+export const generateUploadUrl = mutation(async (ctx) => {
+  return await ctx.storage.generateUploadUrl();
+});
+
+export const deleteUserByName = mutation({
+  args: { name: v.string() },
+  handler: async (ctx, args) => {
+    const user = await ctx.db
+      .query("users")
+      .filter((q) => q.eq(q.field("name"), args.name))
+      .first();
+    if (user) {
+      await ctx.db.delete(user._id);
+    }
   },
 });

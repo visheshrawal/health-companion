@@ -11,6 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Plus, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function PatientAppointments() {
   const appointments = useQuery(api.appointments.listForPatient);
@@ -50,6 +51,9 @@ export default function PatientAppointments() {
       toast.error("Failed to cancel appointment");
     }
   };
+
+  // Filter out cancelled appointments for display, but we rely on AnimatePresence for the exit animation
+  const activeAppointments = appointments?.filter(a => a.status !== 'cancelled') || [];
 
   return (
     <PatientLayout>
@@ -111,40 +115,69 @@ export default function PatientAppointments() {
         </div>
 
         <div className="space-y-4">
-          {appointments?.map((apt) => (
-            <Card key={apt._id} className="glass">
-              <CardContent className="p-6 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
-                    {format(apt.date, "d")}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Dr. {apt.doctor?.name}</h3>
-                    <p className="text-muted-foreground">{apt.doctor?.specialization}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {format(apt.date, "MMMM yyyy • h:mm a")}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize
-                    ${apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
-                      apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
-                      'bg-gray-100 text-gray-700'}`}>
-                    {apt.status}
-                  </div>
-                  {apt.status === 'scheduled' && (
-                    <Button variant="destructive" size="sm" onClick={() => handleCancel(apt._id)}>
-                      <X className="h-4 w-4 mr-1" /> Cancel
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-          {appointments?.length === 0 && (
+          <AnimatePresence mode="popLayout">
+            {activeAppointments.map((apt) => (
+              <motion.div
+                key={apt._id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ 
+                  opacity: 0, 
+                  x: -100,
+                  transition: { duration: 0.5 }
+                }}
+                className="relative overflow-hidden"
+              >
+                <Card className="glass relative z-10">
+                  <CardContent className="p-6 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                        {format(apt.date, "d")}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">Dr. {apt.doctor?.name}</h3>
+                        <p className="text-muted-foreground">{apt.doctor?.specialization}</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {format(apt.date, "MMMM yyyy • h:mm a")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize
+                        ${apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
+                          apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
+                          'bg-gray-100 text-gray-700'}`}>
+                        {apt.status}
+                      </div>
+                      {apt.status === 'scheduled' && (
+                        <Button variant="destructive" size="sm" onClick={() => handleCancel(apt._id)}>
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+                {/* Background element for the "scrolling red cancelled text" effect on exit */}
+                <motion.div 
+                  className="absolute inset-0 bg-destructive/20 flex items-center overflow-hidden z-0 pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  exit={{ opacity: 1 }}
+                >
+                  <motion.div 
+                    className="whitespace-nowrap text-destructive font-bold text-4xl uppercase opacity-50"
+                    initial={{ x: "100%" }}
+                    exit={{ x: "-100%", transition: { duration: 0.8, ease: "linear" } }}
+                  >
+                    CANCELLED CANCELLED CANCELLED CANCELLED CANCELLED
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {activeAppointments.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
-              No appointments scheduled.
+              No scheduled appointments.
             </div>
           )}
         </div>

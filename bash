@@ -1,1 +1,1 @@
-npx convex run cleanup:clearAll
+npx convex run users:deleteUserByName '{"name": "Dr. Johnny Sins"}'
