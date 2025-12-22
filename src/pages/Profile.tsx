@@ -414,13 +414,15 @@ export default function Profile() {
   }
 
   // Edit/Onboarding View
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
-      <div className="absolute top-4 right-4">
-        <Button variant="outline" onClick={handleSignOut}>
-          <LogOut className="mr-2 h-4 w-4" /> Sign Out
-        </Button>
-      </div>
+  const editContent = (
+    <div className={`min-h-screen bg-background flex items-center justify-center p-4 relative ${user.role === "patient" ? "bg-transparent min-h-full" : ""}`}>
+      {user.role !== "patient" && (
+        <div className="absolute top-4 right-4">
+          <Button variant="outline" onClick={handleSignOut}>
+            <LogOut className="mr-2 h-4 w-4" /> Sign Out
+          </Button>
+        </div>
+      )}
       
       <Card className="w-full max-w-2xl glass">
         <CardHeader>
@@ -586,4 +588,9 @@ export default function Profile() {
       </Card>
     </div>
   );
+
+  if (user.role === "patient") {
+    return <PatientLayout>{editContent}</PatientLayout>;
+  }
+  return editContent;
 }
