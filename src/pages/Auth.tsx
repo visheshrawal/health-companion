@@ -88,9 +88,46 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("password", { email, password, flow: "signUp" });
       setFlow("verify");
       toast.success("Verification code sent to your email");
-    } catch (err) {
-      console.error(err);
-      setError("Failed to create account. Email might be already in use.");
+    } catch (err: any) {
+      console.error("Sign up error:", err);
+      
+      // Try to extract the error message
+      let msg = "Failed to create account.";
+      
+      if (typeof err === "string") {
+        msg = err;
+      } else if (err instanceof Error) {
+        msg = err.message;
+      } else if (err.message) {
+        msg = err.message;
+      } else if (err.toString) {
+        msg = err.toString();
+      }
+
+      // Check for specific error conditions
+      if (msg.includes("already in use") || msg.includes("Constraint violation") || msg.includes("Unique constraint") || msg.includes("User already exists")) {
+        setError("This email is already registered. Please sign in instead.");
+      } else {
+        // Clean up JSON error messages if present
+        try {
+          if (msg.startsWith('{') || msg.includes('{"')) {
+             // Try to find JSON part
+             const jsonStart = msg.indexOf('{');
+             const jsonEnd = msg.lastIndexOf('}') + 1;
+             if (jsonStart >= 0 && jsonEnd > jsonStart) {
+               const jsonStr = msg.substring(jsonStart, jsonEnd);
+               const parsed = JSON.parse(jsonStr);
+               setError(parsed.message || msg);
+             } else {
+               setError(msg);
+             }
+          } else {
+             setError(msg);
+          }
+        } catch {
+          setError(msg);
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -162,11 +199,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("anonymous");
-      // Redirect handled by useEffect
+      // Guest login is currently disabled
+      // await signIn("anonymous");
+      setError("Guest access is currently disabled");
     } catch (error) {
       console.error("Guest login error:", error);
       setError("Failed to sign in as guest");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -296,6 +335,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
                 </Button>
+                <div className="text-center text-sm text-muted-foreground mt-2">
+                  Already have an account?{" "}
+                  <Button variant="link" className="p-0 h-auto font-semibold text-primary" onClick={() => setFlow("signIn")}>
+                    Sign In
+                  </Button>
+                </div>
               </form>
             )}
 
@@ -410,7 +455,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </div>
               </div>
               
-              <Button
+              {/* Guest Access Removed temporarily */}
+              {/* <Button
                 type="button"
                 variant="outline"
                 className="w-full mt-4"
@@ -419,7 +465,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               >
                 <UserX className="mr-2 h-4 w-4" />
                 Guest Access
-              </Button>
+              </Button> */}
             </div>
           </CardContent>
           <CardFooter className="flex justify-center border-t p-4">
@@ -428,13 +474,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 Don't have an account?{" "}
                 <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signUp")}>
                   Sign Up
-                </Button>
-              </p>
-            ) : flow === "signUp" ? (
-              <p className="text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signIn")}>
-                  Sign In
                 </Button>
               </p>
             ) : null}
