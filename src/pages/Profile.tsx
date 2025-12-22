@@ -14,6 +14,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { Id } from "@/convex/_generated/dataModel";
 import { PatientLayout } from "@/components/PatientNav";
 import { ImageCropper } from "@/components/ImageCropper";
+import { Navigate } from "react-router";
 
 export default function Profile() {
   const user = useQuery(api.users.currentUser);
@@ -223,6 +224,10 @@ export default function Profile() {
 
   if (user === undefined) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
+  if (user === null) {
+    return <Navigate to="/auth" />;
   }
 
   // Read-Only View

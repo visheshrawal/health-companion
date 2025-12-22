@@ -167,6 +167,9 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.2.0(react@19.2.0)
+      react-easy-crop:
+        specifier: ^5.5.6
+        version: 5.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react-hook-form:
         specifier: ^7.67.0
         version: 7.67.0(react@19.2.0)
@@ -2653,6 +2656,9 @@ packages:
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
+  normalize-wheel@1.0.1:
+    resolution: {integrity: sha512-1OnlAPZ3zgrk8B91HyRj+eVv+kS5u+Z0SCsak6Xil/kmgEia50ga7zfkumayonZrImffAxPU/5WcyGhzetHNPA==}
+
   oauth4webapi@3.8.2:
     resolution: {integrity: sha512-FzZZ+bht5X0FKe7Mwz3DAVAmlH1BV5blSak/lHMBKz0/EBMhX6B10GlQYI51+oRp8ObJaX0g6pXrAxZh5s8rjw==}
 
@@ -2734,6 +2740,12 @@ packages:
     resolution: {integrity: sha512-UlbRu4cAiGaIewkPyiRGJk0imDN2T3JjieT6spoL2UeSf5od4n5LB/mQ4ejmxhCFT1tYe8IvaFulzynWovsEFQ==}
     peerDependencies:
       react: ^19.2.0
+
+  react-easy-crop@5.5.6:
+    resolution: {integrity: sha512-Jw3/ozs8uXj3NpL511Suc4AHY+mLRO23rUgipXvNYKqezcFSYHxe4QXibBymkOoY6oOtLVMPO2HNPRHYvMPyTw==}
+    peerDependencies:
+      react: '>=16.4.0'
+      react-dom: '>=16.4.0'
 
   react-hook-form@7.67.0:
     resolution: {integrity: sha512-E55EOwKJHHIT/I6J9DmQbCWToAYSw9nN5R57MZw9rMtjh+YQreMDxRLfdjfxQbiJ3/qbg3Z02wGzBX4M+5fMtQ==}
@@ -5417,6 +5429,8 @@ snapshots:
 
   node-releases@2.0.19: {}
 
+  normalize-wheel@1.0.1: {}
+
   oauth4webapi@3.8.2: {}
 
   optionator@0.9.4:
@@ -5488,6 +5502,13 @@ snapshots:
     dependencies:
       react: 19.2.0
       scheduler: 0.27.0
+
+  react-easy-crop@5.5.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+    dependencies:
+      normalize-wheel: 1.0.1
+      react: 19.2.0
+      react-dom: 19.2.0(react@19.2.0)
+      tslib: 2.8.1
 
   react-hook-form@7.67.0(react@19.2.0):
     dependencies:
