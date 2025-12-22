@@ -3,6 +3,7 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
 
 async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
+  console.log(`Sending verification code to ${email}`);
   try {
     const response = await fetch("https://email.vly.ai/send_otp", {
       method: "POST",

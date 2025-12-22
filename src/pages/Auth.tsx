@@ -38,6 +38,35 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper to parse errors
+  const parseError = (err: any) => {
+    let msg = "An error occurred";
+    if (typeof err === "string") {
+      msg = err;
+    } else if (err instanceof Error) {
+      msg = err.message;
+    } else if (err.message) {
+      msg = err.message;
+    } else if (err.toString) {
+      msg = err.toString();
+    }
+
+    try {
+      if (msg.startsWith('{') || msg.includes('{"')) {
+         const jsonStart = msg.indexOf('{');
+         const jsonEnd = msg.lastIndexOf('}') + 1;
+         if (jsonStart >= 0 && jsonEnd > jsonStart) {
+           const jsonStr = msg.substring(jsonStart, jsonEnd);
+           const parsed = JSON.parse(jsonStr);
+           return parsed.message || msg;
+         }
+      }
+    } catch {
+      // ignore
+    }
+    return msg;
+  };
+
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       const redirect = redirectAfterAuth || "/dashboard";
@@ -59,7 +88,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("password", { email, password, flow: "signIn" });
+      await signIn("password", { email: email.trim(), password, flow: "signIn" });
       // Redirect handled by useEffect
     } catch (err) {
       console.error(err);
@@ -85,48 +114,37 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("password", { email, password, flow: "signUp" });
+      await signIn("password", { email: email.trim(), password, flow: "signUp" });
       setFlow("verify");
       toast.success("Verification code sent to your email");
     } catch (err: any) {
       console.error("Sign up error:", err);
-      
-      // Try to extract the error message
-      let msg = "Failed to create account.";
-      
-      if (typeof err === "string") {
-        msg = err;
-      } else if (err instanceof Error) {
-        msg = err.message;
-      } else if (err.message) {
-        msg = err.message;
-      } else if (err.toString) {
-        msg = err.toString();
-      }
+      const msg = parseError(err);
 
       // Check for specific error conditions
       if (msg.includes("already in use") || msg.includes("Constraint violation") || msg.includes("Unique constraint") || msg.includes("User already exists")) {
         setError("This email is already registered. Please sign in instead.");
       } else {
-        // Clean up JSON error messages if present
-        try {
-          if (msg.startsWith('{') || msg.includes('{"')) {
-             // Try to find JSON part
-             const jsonStart = msg.indexOf('{');
-             const jsonEnd = msg.lastIndexOf('}') + 1;
-             if (jsonStart >= 0 && jsonEnd > jsonStart) {
-               const jsonStr = msg.substring(jsonStart, jsonEnd);
-               const parsed = JSON.parse(jsonStr);
-               setError(parsed.message || msg);
-             } else {
-               setError(msg);
-             }
-          } else {
-             setError(msg);
-          }
-        } catch {
-          setError(msg);
-        }
+        setError(msg);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await signIn("password", { email: email.trim(), password, flow: "signUp" });
+      toast.success("Verification code resent");
+    } catch (err) {
+      console.error("Resend error:", err);
+      const msg = parseError(err);
+      if (msg.includes("already in use")) {
+         toast.error("Account already exists. Please try verifying with the existing code or sign in.");
+      } else {
+         toast.error("Failed to resend code: " + msg);
       }
     } finally {
       setIsLoading(false);
@@ -139,11 +157,11 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setError(null);
     try {
       // For verification during signup
-      await signIn("password", { email, code: otp, flow: "signUp" });
+      await signIn("password", { email: email.trim(), code: otp, flow: "signUp" });
       // Redirect handled by useEffect
     } catch (err) {
       console.error(err);
-      setError("Invalid verification code");
+      setError(parseError(err));
       setIsLoading(false);
     }
   };
@@ -153,7 +171,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("password", { email, flow: "reset" }); // Trigger reset flow
+      await signIn("password", { email: email.trim(), flow: "reset" }); // Trigger reset flow
       setFlow("resetPassword");
       toast.success("Password reset code sent to your email");
     } catch (err) {
@@ -181,7 +199,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     setIsLoading(true);
     setError(null);
     try {
-      await signIn("password", { email, code: otp, newPassword: password, flow: "reset" });
+      await signIn("password", { email: email.trim(), code: otp, newPassword: password, flow: "reset" });
       toast.success("Password reset successfully. Please sign in.");
       setFlow("signIn");
       setPassword("");
@@ -189,7 +207,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       setOtp("");
     } catch (err) {
       console.error(err);
-      setError("Failed to reset password. Invalid code or expired.");
+      setError(parseError(err));
     } finally {
       setIsLoading(false);
     }
@@ -364,9 +382,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Email"}
                 </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setFlow("signUp")}>
-                  Back to Sign Up
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="w-full" onClick={handleResendCode} disabled={isLoading}>
+                    Resend Code
+                  </Button>
+                  <Button type="button" variant="ghost" className="w-full" onClick={() => setFlow("signUp")}>
+                    Back to Sign Up
+                  </Button>
+                </div>
               </form>
             )}
 
