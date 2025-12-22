@@ -121,5 +121,13 @@ export const deleteUserByName = mutation({
     for (const user of users) {
       await ctx.db.delete(user._id);
     }
+    return users.length;
+  },
+});
+
+export const deleteUserById = mutation({
+  args: { id: v.id("users") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
   },
 });
