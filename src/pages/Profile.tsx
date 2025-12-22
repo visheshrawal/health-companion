@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Loader2, User, Stethoscope, LogOut, CheckCircle2, Edit2, Upload, FileText, Trash2, Camera } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Id } from "@/convex/_generated/dataModel";
+import { PatientLayout } from "@/components/PatientNav";
+import { ImageCropper } from "@/components/ImageCropper";
 
 export default function Profile() {
   const user = useQuery(api.users.currentUser);
@@ -27,6 +29,10 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordInputRef = useRef<HTMLInputElement>(null);
+
+  // Image Cropper State
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
 
   // Step state
   const [step, setStep] = useState(1);
@@ -91,17 +97,28 @@ export default function Profile() {
     navigate("/auth");
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setSelectedImageSrc(reader.result?.toString() || null);
+        setCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
+      // Reset input so same file can be selected again if needed
+      e.target.value = "";
+    }
+  };
 
+  const handleCroppedImageUpload = async (blob: Blob) => {
     try {
       setIsLoading(true);
       const postUrl = await generateUploadUrl();
       const result = await fetch(postUrl, {
         method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
+        headers: { "Content-Type": blob.type },
+        body: blob,
       });
       const { storageId } = await result.json();
       
@@ -210,7 +227,7 @@ export default function Profile() {
 
   // Read-Only View
   if (user?.profileCompleted && !isEditing) {
-    return (
+    const content = (
       <div className="min-h-screen bg-background p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex justify-between items-center">
@@ -248,7 +265,7 @@ export default function Profile() {
                     ref={fileInputRef} 
                     className="hidden" 
                     accept="image/*" 
-                    onChange={handleImageUpload} 
+                    onChange={onFileSelect} 
                   />
                 </div>
                 
@@ -379,9 +396,21 @@ export default function Profile() {
               </CardContent>
             </Card>
           )}
+          
+          <ImageCropper 
+            open={cropModalOpen} 
+            onOpenChange={setCropModalOpen} 
+            imageSrc={selectedImageSrc} 
+            onCropComplete={handleCroppedImageUpload} 
+          />
         </div>
       </div>
     );
+
+    if (user.role === "patient") {
+      return <PatientLayout>{content}</PatientLayout>;
+    }
+    return content;
   }
 
   // Edit/Onboarding View

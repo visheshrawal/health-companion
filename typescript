@@ -1,29 +1,82 @@
-import { convexAuth } from "@convex-dev/auth/server";
-import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
-import { emailOtp } from "./auth/emailOtp";
-import { Password } from "@convex-dev/auth/providers/Password"; // I need to make sure this path is correct.
+// ... imports
+import { PatientLayout } from "@/components/PatientNav";
+import { ImageCropper } from "@/components/ImageCropper";
 
-export function Password<DataModel extends GenericDataModel>(
-  config: PasswordConfig<DataModel>,
-): AuthProvider<DataModel>;
+// ... inside component
+  // ... keep existing code
+  const [isEditing, setIsEditing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const recordInputRef = useRef<HTMLInputElement>(null);
 
-export function Password<DataModel extends GenericDataModel>(
-  config: PasswordConfig<DataModel>,
-): AuthProvider<DataModel> {
-  return {
-    verify: {
-      async generateVerificationToken() { ... },
-      async sendVerificationRequest({ identifier, token }) { ... },
-    },
+  // Image Cropper State
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+
+  // ... keep existing code
+
+  // REPLACE handleImageUpload with onFileSelect and handleCroppedImageUpload
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setSelectedImageSrc(reader.result?.toString() || null);
+        setCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
+      e.target.value = "";
+    }
   };
-}
 
-export const password = Password({
-  // ...
-});
+  const handleCroppedImageUpload = async (blob: Blob) => {
+    try {
+      setIsLoading(true);
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": blob.type },
+        body: blob,
+      });
+      const { storageId } = await result.json();
+      
+      await updateProfile({ image: storageId });
+      toast.success("Profile photo updated");
+    } catch (error) {
+      toast.error("Failed to upload photo");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-const random: RandomReader = {
-  read(bytes: Uint8Array) {
-    crypto.getRandomValues(bytes);
-  },
-};
+  // ... keep existing code (handleRecordUpload, etc)
+
+  // ... inside Read-Only View if block
+  if (user?.profileCompleted && !isEditing) {
+    const content = (
+      <div className="min-h-screen bg-background p-4 md:p-8">
+        {/* ... keep existing code (content of the profile page) */}
+          {/* Update the input onChange to onFileSelect */}
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={onFileSelect} 
+                  />
+        {/* ... keep existing code */}
+          {/* Add ImageCropper at the end of the content div */}
+          <ImageCropper 
+            open={cropModalOpen} 
+            onOpenChange={setCropModalOpen} 
+            imageSrc={selectedImageSrc} 
+            onCropComplete={handleCroppedImageUpload} 
+          />
+      </div>
+    );
+
+    if (user.role === "patient") {
+      return <PatientLayout>{content}</PatientLayout>;
+    }
+    return content;
+  }
