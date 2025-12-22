@@ -1,11 +1,29 @@
-import Profile from "../Profile";
-import PatientNav from "@/components/PatientNav";
+import { convexAuth } from "@convex-dev/auth/server";
+import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
+import { emailOtp } from "./auth/emailOtp";
+import { Password } from "@convex-dev/auth/providers/Password"; // I need to make sure this path is correct.
 
-export default function ProfileView() {
-  return (
-    <div className="pb-20">
-      <Profile />
-      <PatientNav />
-    </div>
-  );
+export function Password<DataModel extends GenericDataModel>(
+  config: PasswordConfig<DataModel>,
+): AuthProvider<DataModel>;
+
+export function Password<DataModel extends GenericDataModel>(
+  config: PasswordConfig<DataModel>,
+): AuthProvider<DataModel> {
+  return {
+    verify: {
+      async generateVerificationToken() { ... },
+      async sendVerificationRequest({ identifier, token }) { ... },
+    },
+  };
 }
+
+export const password = Password({
+  // ...
+});
+
+const random: RandomReader = {
+  read(bytes: Uint8Array) {
+    crypto.getRandomValues(bytes);
+  },
+};
