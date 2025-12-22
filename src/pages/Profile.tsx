@@ -9,12 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Loader2, User, Stethoscope } from "lucide-react";
+import { Loader2, User, Stethoscope, LogOut } from "lucide-react";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 export default function Profile() {
   const user = useQuery(api.users.currentUser);
   const updateProfile = useMutation(api.users.updateProfile);
   const navigate = useNavigate();
+  const { signOut } = useAuthActions();
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
@@ -41,6 +43,11 @@ export default function Profile() {
       if (user.bio) setBio(user.bio);
     }
   }, [user]);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +78,12 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4">
+        <Button variant="outline" onClick={handleSignOut}>
+          <LogOut className="mr-2 h-4 w-4" /> Sign Out
+        </Button>
+      </div>
       <Card className="w-full max-w-2xl glass">
         <CardHeader>
           <CardTitle className="text-2xl">Complete Your Profile</CardTitle>

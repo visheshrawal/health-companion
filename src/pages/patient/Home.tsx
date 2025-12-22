@@ -3,9 +3,11 @@ import { api } from "@/convex/_generated/api";
 import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, AlertCircle, Flame, Calendar as CalendarIcon } from "lucide-react";
+import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useNavigate } from "react-router";
 
 export default function PatientHome() {
   const user = useQuery(api.users.currentUser);
@@ -13,8 +15,15 @@ export default function PatientHome() {
   const appointments = useQuery(api.appointments.listForPatient);
   const streak = useQuery(api.medications.getStreak);
   const toggleTaken = useMutation(api.medications.toggleTaken);
+  const { signOut } = useAuthActions();
+  const navigate = useNavigate();
 
   const today = new Date().toISOString().split('T')[0];
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
 
   const handleTakeMed = async (medId: any, taken: boolean) => {
     await toggleTaken({ medicationId: medId, date: today, taken });
@@ -32,10 +41,15 @@ export default function PatientHome() {
             <h1 className="text-3xl font-bold tracking-tight">Hello, {user?.name?.split(' ')[0]}</h1>
             <p className="text-muted-foreground">Here's your health overview for today.</p>
           </div>
-          <Button variant="destructive" className="shadow-lg shadow-destructive/20 animate-pulse" onClick={() => toast.error("SOS Alert Sent to Emergency Contacts!")}>
-            <AlertCircle className="mr-2 h-4 w-4" />
-            SOS
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" /> Sign Out
+            </Button>
+            <Button variant="destructive" className="shadow-lg shadow-destructive/20 animate-pulse" onClick={() => toast.error("SOS Alert Sent to Emergency Contacts!")}>
+              <AlertCircle className="mr-2 h-4 w-4" />
+              SOS
+            </Button>
+          </div>
         </header>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
