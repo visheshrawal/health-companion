@@ -267,12 +267,12 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           <div className="py-4 px-6 text-xs text-center text-muted-foreground bg-muted border-t rounded-b-lg">
             Secured by{" "}
             <a
-              href="https://vly.ai"
+              href="#"
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-primary transition-colors"
             >
-              vly.ai
+              HealthcareCompanion
             </a>
           </div>
         </Card>
