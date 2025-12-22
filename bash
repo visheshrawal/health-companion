@@ -1,1 +1,1 @@
-npx convex run users:deleteUserByName '{"name": "Dr. Johnny Sins"}'
+npx convex run users:listDoctors

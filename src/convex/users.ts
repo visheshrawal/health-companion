@@ -113,11 +113,12 @@ export const generateUploadUrl = mutation(async (ctx) => {
 export const deleteUserByName = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.db
+    const users = await ctx.db
       .query("users")
       .filter((q) => q.eq(q.field("name"), args.name))
-      .first();
-    if (user) {
+      .collect();
+    
+    for (const user of users) {
       await ctx.db.delete(user._id);
     }
   },
