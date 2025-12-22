@@ -353,12 +353,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
                 </Button>
-                <div className="text-center text-sm text-muted-foreground mt-2">
-                  Already have an account?{" "}
-                  <Button variant="link" className="p-0 h-auto font-semibold text-primary" onClick={() => setFlow("signIn")}>
-                    Sign In
-                  </Button>
-                </div>
               </form>
             )}
 
@@ -382,14 +376,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Email"}
                 </Button>
-                <div className="flex flex-col gap-2">
-                  <Button type="button" variant="outline" className="w-full" onClick={handleResendCode} disabled={isLoading}>
-                    Resend Code
-                  </Button>
-                  <Button type="button" variant="ghost" className="w-full" onClick={() => setFlow("signUp")}>
-                    Back to Sign Up
-                  </Button>
-                </div>
+                <Button type="button" variant="outline" className="w-full" onClick={handleResendCode} disabled={isLoading}>
+                  Resend Code
+                </Button>
               </form>
             )}
 
@@ -413,9 +402,6 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Reset Code"}
-                </Button>
-                <Button type="button" variant="ghost" className="w-full" onClick={() => setFlow("signIn")}>
-                  Back to Sign In
                 </Button>
               </form>
             )}
@@ -466,15 +452,33 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
               </form>
             )}
           </CardContent>
-          <CardFooter className="flex justify-center border-t p-4">
-            {flow === "signIn" ? (
-              <p className="text-sm text-muted-foreground">
+          <CardFooter className="flex flex-col gap-2 border-t p-4">
+            {flow === "signIn" && (
+              <p className="text-sm text-muted-foreground text-center">
                 Don't have an account?{" "}
                 <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signUp")}>
                   Sign Up
                 </Button>
               </p>
-            ) : null}
+            )}
+            {flow === "signUp" && (
+              <p className="text-sm text-muted-foreground text-center">
+                Already have an account?{" "}
+                <Button variant="link" className="p-0 h-auto font-semibold text-primary" onClick={() => setFlow("signIn")}>
+                  Sign In
+                </Button>
+              </p>
+            )}
+            {flow === "verify" && (
+               <Button variant="ghost" className="w-full" onClick={() => setFlow("signUp")}>
+                 Back to Sign Up
+               </Button>
+            )}
+            {flow === "forgotPassword" && (
+               <Button variant="ghost" className="w-full" onClick={() => setFlow("signIn")}>
+                 Back to Sign In
+               </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
