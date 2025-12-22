@@ -13,6 +13,13 @@ import "./types/global.d.ts";
 const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
+const Profile = lazy(() => import("./pages/Profile.tsx"));
+const PatientHome = lazy(() => import("./pages/patient/Home.tsx"));
+const PatientMedications = lazy(() => import("./pages/patient/Medications.tsx"));
+const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
+const DoctorHome = lazy(() => import("./pages/doctor/Home.tsx"));
+const AppointmentDetail = lazy(() => import("./pages/doctor/AppointmentDetail.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -61,7 +68,19 @@ createRoot(document.getElementById("root")!).render(
           <Suspense fallback={<RouteLoading />}>
             <Routes>
               <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<AuthPage redirectAfterAuth="/" />} /> {/* TODO: change redirect after auth to correct page */}
+              <Route path="/auth" element={<AuthPage redirectAfterAuth="/dashboard" />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              
+              {/* Patient Routes */}
+              <Route path="/patient" element={<PatientHome />} />
+              <Route path="/patient/medications" element={<PatientMedications />} />
+              <Route path="/patient/appointments" element={<PatientAppointments />} />
+              
+              {/* Doctor Routes */}
+              <Route path="/doctor" element={<DoctorHome />} />
+              <Route path="/doctor/appointments/:id" element={<AppointmentDetail />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
