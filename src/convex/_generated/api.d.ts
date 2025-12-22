@@ -11,6 +11,7 @@
 import type * as appointments from "../appointments.js";
 import type * as auth from "../auth.js";
 import type * as auth_emailOtp from "../auth/emailOtp.js";
+import type * as cleanup from "../cleanup.js";
 import type * as http from "../http.js";
 import type * as medications from "../medications.js";
 import type * as prescriptions from "../prescriptions.js";
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   appointments: typeof appointments;
   auth: typeof auth;
   "auth/emailOtp": typeof auth_emailOtp;
+  cleanup: typeof cleanup;
   http: typeof http;
   medications: typeof medications;
   prescriptions: typeof prescriptions;

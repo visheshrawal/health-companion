@@ -22,16 +22,37 @@ const schema = defineSchema(
       emailVerificationTime: v.optional(v.number()),
       isAnonymous: v.optional(v.boolean()),
       role: v.optional(roleValidator),
+      profileCompleted: v.optional(v.boolean()),
       
-      // Patient specific
+      // Patient Profile Object
+      patientProfile: v.optional(v.object({
+        dateOfBirth: v.string(),
+        sex: v.optional(v.string()),
+        bloodGroup: v.optional(v.string()),
+        conditions: v.array(v.string()),
+        allergies: v.array(v.string()),
+        emergencyContact: v.object({
+          name: v.string(),
+          phone: v.string(),
+        }),
+      })),
+
+      // Doctor Profile Object
+      doctorProfile: v.optional(v.object({
+        specialization: v.string(),
+        licenseNumber: v.optional(v.string()),
+        affiliation: v.optional(v.string()),
+        bio: v.string(),
+        isVerified: v.boolean(),
+      })),
+
+      // Legacy fields (keeping for backward compatibility if needed, but new flow uses objects)
       age: v.optional(v.number()),
       conditions: v.optional(v.array(v.string())),
       emergencyContact: v.optional(v.object({
         name: v.string(),
         phone: v.string(),
       })),
-
-      // Doctor specific
       specialization: v.optional(v.string()),
       bio: v.optional(v.string()),
     }).index("email", ["email"])

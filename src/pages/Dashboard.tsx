@@ -18,7 +18,8 @@ export default function Dashboard() {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!user.role) {
+  // Force profile completion
+  if (!user.profileCompleted) {
     return <Navigate to="/profile" replace />;
   }
 

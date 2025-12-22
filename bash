@@ -1,1 +1,1 @@
-npm run build
+npx convex run cleanup:clearAll

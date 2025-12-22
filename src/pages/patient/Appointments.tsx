@@ -10,12 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 export default function PatientAppointments() {
   const appointments = useQuery(api.appointments.listForPatient);
   const doctors = useQuery(api.users.listDoctors);
   const bookAppointment = useMutation(api.appointments.book);
+  const cancelAppointment = useMutation(api.appointments.cancel);
   
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -38,6 +39,15 @@ export default function PatientAppointments() {
       setIsOpen(false);
     } catch (error) {
       toast.error("Failed to book appointment");
+    }
+  };
+
+  const handleCancel = async (id: any) => {
+    try {
+      await cancelAppointment({ appointmentId: id });
+      toast.success("Appointment cancelled");
+    } catch (error) {
+      toast.error("Failed to cancel appointment");
     }
   };
 
@@ -116,11 +126,18 @@ export default function PatientAppointments() {
                     </p>
                   </div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize
-                  ${apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
-                    apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
-                    'bg-gray-100 text-gray-700'}`}>
-                  {apt.status}
+                <div className="flex items-center gap-4">
+                  <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize
+                    ${apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
+                      apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
+                      'bg-gray-100 text-gray-700'}`}>
+                    {apt.status}
+                  </div>
+                  {apt.status === 'scheduled' && (
+                    <Button variant="destructive" size="sm" onClick={() => handleCancel(apt._id)}>
+                      <X className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

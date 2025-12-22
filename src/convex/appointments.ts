@@ -22,6 +22,25 @@ export const book = mutation({
   },
 });
 
+export const cancel = mutation({
+  args: {
+    appointmentId: v.id("appointments"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const apt = await ctx.db.get(args.appointmentId);
+    if (!apt) throw new Error("Appointment not found");
+
+    if (apt.patientId !== userId && apt.doctorId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.patch(args.appointmentId, { status: "cancelled" });
+  },
+});
+
 export const listForPatient = query({
   args: {},
   handler: async (ctx) => {

@@ -38,16 +38,29 @@ export const updateProfile = mutation({
   args: {
     name: v.optional(v.string()),
     role: v.optional(v.string()), // "patient" or "doctor"
+    profileCompleted: v.optional(v.boolean()),
+    
     // Patient fields
-    age: v.optional(v.number()),
-    conditions: v.optional(v.array(v.string())),
-    emergencyContact: v.optional(v.object({
-      name: v.string(),
-      phone: v.string(),
+    patientProfile: v.optional(v.object({
+      dateOfBirth: v.string(),
+      sex: v.optional(v.string()),
+      bloodGroup: v.optional(v.string()),
+      conditions: v.array(v.string()),
+      allergies: v.array(v.string()),
+      emergencyContact: v.object({
+        name: v.string(),
+        phone: v.string(),
+      }),
     })),
+
     // Doctor fields
-    specialization: v.optional(v.string()),
-    bio: v.optional(v.string()),
+    doctorProfile: v.optional(v.object({
+      specialization: v.string(),
+      licenseNumber: v.optional(v.string()),
+      affiliation: v.optional(v.string()),
+      bio: v.string(),
+      isVerified: v.boolean(),
+    })),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -58,9 +71,20 @@ export const updateProfile = mutation({
       throw new Error("Invalid role");
     }
 
-    // Cast role to the correct type for the patch
     const patchData: any = { ...args };
     
+    // Map legacy fields for backward compatibility if needed, or just rely on new objects
+    if (args.patientProfile) {
+      patchData.age = new Date().getFullYear() - new Date(args.patientProfile.dateOfBirth).getFullYear();
+      patchData.conditions = args.patientProfile.conditions;
+      patchData.emergencyContact = args.patientProfile.emergencyContact;
+    }
+    
+    if (args.doctorProfile) {
+      patchData.specialization = args.doctorProfile.specialization;
+      patchData.bio = args.doctorProfile.bio;
+    }
+
     await ctx.db.patch(userId, patchData);
   },
 });
