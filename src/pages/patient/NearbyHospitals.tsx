@@ -216,15 +216,16 @@ export default function NearbyHospitals() {
         <div className="flex-1 grid md:grid-cols-2 gap-4 min-h-0">
           {/* Map View */}
           <Card className="overflow-hidden border-0 shadow-none md:border md:shadow-sm h-[300px] md:h-auto relative">
-            <div ref={mapRef} className="w-full h-full bg-muted flex items-center justify-center">
-              {!window.google?.maps && (
+            <div ref={mapRef} className="w-full h-full bg-muted" />
+            {!window.google?.maps && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
                 <div className="text-center p-4">
                   <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">Map requires configuration</p>
                 </div>
-              )}
-            </div>
-            <div className="absolute bottom-4 left-4 right-4 bg-background/90 backdrop-blur p-2 rounded-lg text-xs text-muted-foreground text-center border">
+              </div>
+            )}
+            <div className="absolute bottom-4 left-4 right-4 bg-background/90 backdrop-blur p-2 rounded-lg text-xs text-muted-foreground text-center border z-20">
               Important: Distances are estimates. Call ahead to confirm services.
             </div>
           </Card>
