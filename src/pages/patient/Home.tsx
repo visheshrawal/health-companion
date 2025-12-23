@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useNavigate } from "react-router";
+import { useState } from "react";
 
 export default function PatientHome() {
   const user = useQuery(api.users.currentUser);
@@ -15,14 +16,60 @@ export default function PatientHome() {
   const appointments = useQuery(api.appointments.listForPatient);
   const streak = useQuery(api.medications.getStreak);
   const toggleTaken = useMutation(api.medications.toggleTaken);
+  const sendSOS = useAction(api.sos.trigger);
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
+  const [isSendingSOS, setIsSendingSOS] = useState(false);
 
   const today = new Date().toISOString().split('T')[0];
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleSOS = async () => {
+    setIsSendingSOS(true);
+    toast.info("Getting location and sending SOS...");
+    
+    if (!navigator.geolocation) {
+      try {
+        await sendSOS({ location: "Location access not supported" });
+        toast.success("SOS Alert Sent!");
+      } catch (error: any) {
+        toast.error(error.message || "Failed to send SOS");
+      } finally {
+        setIsSendingSOS(false);
+      }
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const locationLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+        
+        try {
+          await sendSOS({ location: locationLink });
+          toast.success("SOS Alert Sent with Location!");
+        } catch (error: any) {
+          toast.error(error.message || "Failed to send SOS");
+        } finally {
+          setIsSendingSOS(false);
+        }
+      },
+      async (error) => {
+        console.error("Location error:", error);
+        try {
+          await sendSOS({ location: "Location access denied or failed" });
+          toast.success("SOS Alert Sent (No Location)!");
+        } catch (err: any) {
+          toast.error(err.message || "Failed to send SOS");
+        } finally {
+          setIsSendingSOS(false);
+        }
+      }
+    );
   };
 
   const handleTakeMed = async (medId: any, time: string, status: string) => {
@@ -62,9 +109,14 @@ export default function PatientHome() {
             <Button variant="outline" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" /> Sign Out
             </Button>
-            <Button variant="destructive" className="shadow-lg shadow-destructive/20 animate-pulse" onClick={() => toast.error("SOS Alert Sent to Emergency Contacts!")}>
+            <Button 
+              variant="destructive" 
+              className="shadow-lg shadow-destructive/20 animate-pulse" 
+              onClick={handleSOS}
+              disabled={isSendingSOS}
+            >
               <AlertCircle className="mr-2 h-4 w-4" />
-              SOS
+              {isSendingSOS ? "Sending..." : "SOS"}
             </Button>
           </div>
         </header>
