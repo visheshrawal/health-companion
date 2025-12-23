@@ -1,3 +1,5 @@
+export {};
+
 declare global {
   interface Window {
     /**
@@ -8,4 +10,4 @@ declare global {
   }
 }
 
-export {};
+declare module 'canvas-confetti';
