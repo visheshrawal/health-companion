@@ -25,10 +25,13 @@ export default function Discover() {
   const [viewContent, setViewContent] = useState<any>(null);
   const [shareContent, setShareContent] = useState<any>(null);
 
-  // Auto-seed content if empty (for demo purposes)
+  // Auto-seed/update content if empty or missing URLs
   useEffect(() => {
-    if (feed && feed.length === 0) {
-      seedContent();
+    if (feed) {
+      const needsUpdate = feed.length === 0 || (feed.length > 0 && !feed[0].url && feed[0].type !== 'tip');
+      if (needsUpdate) {
+        seedContent();
+      }
     }
   }, [feed, seedContent]);
 
