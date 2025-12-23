@@ -67,7 +67,9 @@ export default function Landing() {
       </main>
 
       <footer className="p-6 text-center text-muted-foreground text-sm">
-        © 2024 Health Companion. All rights reserved.
+        <div className="mt-20 pt-8 border-t text-center text-muted-foreground">
+          <p>&copy; 2025 Health Companion. All rights reserved.</p>
+        </div>
       </footer>
     </div>
   );
