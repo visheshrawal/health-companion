@@ -188,7 +188,7 @@ export const processConsultationRecording = action({
     try {
       const aiResponse = await generateContentWithFallback(
         [
-          { text: prompt },
+          { parts: [{ text: prompt }] },
           {
             inlineData: {
               mimeType: "audio/mp3", // Assuming MP3 or compatible audio

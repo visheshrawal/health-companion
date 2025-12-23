@@ -2,6 +2,35 @@ import { mutation, query, internalMutation, internalQuery } from "./_generated/s
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const getByAppointmentId = query({
+  args: { appointmentId: v.id("appointments") },
+  handler: async (ctx, args) => {
+    const consultation = await ctx.db
+      .query("consultations")
+      .withIndex("by_appointment", (q) => q.eq("appointmentId", args.appointmentId))
+      .unique();
+    
+    if (!consultation) return null;
+
+    let recordingUrl = null;
+    if (consultation.recordingStorageId) {
+      recordingUrl = await ctx.storage.getUrl(consultation.recordingStorageId);
+    }
+
+    return {
+      ...consultation,
+      recordingUrl
+    };
+  },
+});
+
 export const listForPatient = query({
   args: {},
   handler: async (ctx) => {
