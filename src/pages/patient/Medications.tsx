@@ -6,13 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Flame, Sun, Moon, Sunset, Pill, CheckCircle2, Clock } from "lucide-react";
+import { Flame, Sun, Moon, Sunset, Pill, CheckCircle2, Clock, CalendarDays, TrendingUp, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { AdherenceCalendar } from "@/components/medications/AdherenceCalendar";
 
 export default function PatientMedications() {
   const medications = useQuery(api.medications.list);
   const streak = useQuery(api.medications.getStreak);
+  const stats = useQuery(api.medications.getAdherenceStats);
   const toggleTaken = useMutation(api.medications.toggleTaken);
 
   const today = new Date().toISOString().split('T')[0];
@@ -59,14 +61,53 @@ export default function PatientMedications() {
             <h1 className="text-3xl font-bold tracking-tight">My Medications</h1>
             <p className="text-muted-foreground">Track your daily prescriptions and adherence.</p>
           </div>
-          <Card className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-200 dark:border-orange-900">
-            <CardContent className="p-4 flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+        </div>
+
+        {/* Adherence Calendar */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" /> Weekly Adherence
+          </h2>
+          <AdherenceCalendar medications={medications || []} />
+        </div>
+
+        {/* Progress & Stats */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card className="bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-200 dark:border-orange-900">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
                 <Flame className="h-6 w-6 text-orange-500" />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
-                <p className="text-xl font-bold text-orange-600 dark:text-orange-400">{streak || 0} Days</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{streak || 0} Days</p>
+                <p className="text-xs text-muted-foreground">Keep it up!</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-blue-200 dark:border-blue-900">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                <TrendingUp className="h-6 w-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Monthly Adherence</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.monthlyAdherence || 0}%</p>
+                <p className="text-xs text-muted-foreground">Last 30 days</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-200 dark:border-purple-900">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                <Trophy className="h-6 w-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Meds</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{activeMeds.length}</p>
+                <p className="text-xs text-muted-foreground">Prescriptions</p>
               </div>
             </CardContent>
           </Card>

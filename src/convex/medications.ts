@@ -100,6 +100,50 @@ export const getStreak = query({
   },
 });
 
+export const getAdherenceStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+
+    const meds = await ctx.db
+      .query("medications")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .collect();
+
+    const now = Date.now();
+    
+    let totalExpected = 0;
+    let totalTaken = 0;
+
+    // Calculate for last 30 days
+    for (let d = 0; d < 30; d++) {
+        const date = new Date(now - d * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        for (const med of meds) {
+            // Check if active on this date
+            if (med.startDate <= date.getTime() && (!med.endDate || med.endDate >= date.getTime())) {
+                const expected = med.schedule?.length || 0;
+                totalExpected += expected;
+
+                const taken = med.takenLog.filter(log => {
+                    if (typeof log === 'string') return log === dateStr;
+                    return log.date === dateStr && log.status === 'taken';
+                }).length;
+                totalTaken += taken;
+            }
+        }
+    }
+
+    const monthlyAdherence = totalExpected > 0 ? Math.round((totalTaken / totalExpected) * 100) : 100;
+
+    return {
+        monthlyAdherence,
+    };
+  }
+});
+
 export const toggleTaken = mutation({
   args: {
     medicationId: v.id("medications"),
