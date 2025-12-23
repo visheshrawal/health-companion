@@ -17,6 +17,7 @@ import type * as medications from "../medications.js";
 import type * as notifications from "../notifications.js";
 import type * as prescriptions from "../prescriptions.js";
 import type * as sos from "../sos.js";
+import type * as sosLogs from "../sosLogs.js";
 import type * as users from "../users.js";
 
 import type {
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   notifications: typeof notifications;
   prescriptions: typeof prescriptions;
   sos: typeof sos;
+  sosLogs: typeof sosLogs;
   users: typeof users;
 }>;
 

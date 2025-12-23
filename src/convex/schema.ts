@@ -146,6 +146,18 @@ const schema = defineSchema(
       link: v.optional(v.string()),
       createdAt: v.number(),
     }).index("by_user", ["userId"]).index("by_user_and_read", ["userId", "read"]),
+    
+    sos_logs: defineTable({
+      userId: v.id("users"),
+      contactName: v.string(),
+      contactEmail: v.string(),
+      location: v.optional(v.string()),
+      latitude: v.optional(v.number()),
+      longitude: v.optional(v.number()),
+      status: v.string(), // "sent", "failed"
+      error: v.optional(v.string()),
+      sentAt: v.number(),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,

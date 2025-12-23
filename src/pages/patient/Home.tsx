@@ -45,8 +45,8 @@ export default function PatientHome() {
     
     if (!navigator.geolocation) {
       try {
-        await sendSOS({ location: "Location access not supported" });
-        toast.success("SOS Alert Sent!");
+        const result = await sendSOS({ location: "Location access not supported" });
+        toast.success(result.message);
       } catch (error: any) {
         toast.error(error.message || "Failed to send SOS");
       } finally {
@@ -61,8 +61,12 @@ export default function PatientHome() {
         const locationLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
         
         try {
-          await sendSOS({ location: locationLink });
-          toast.success("SOS Alert Sent with Location!");
+          const result = await sendSOS({ 
+            location: locationLink,
+            latitude,
+            longitude
+          });
+          toast.success(result.message);
         } catch (error: any) {
           toast.error(error.message || "Failed to send SOS");
         } finally {
@@ -72,8 +76,8 @@ export default function PatientHome() {
       async (error) => {
         console.error("Location error:", error);
         try {
-          await sendSOS({ location: "Location access denied or failed" });
-          toast.success("SOS Alert Sent (No Location)!");
+          const result = await sendSOS({ location: "Location access denied or failed" });
+          toast.success(result.message);
         } catch (err: any) {
           toast.error(err.message || "Failed to send SOS");
         } finally {
