@@ -28,14 +28,16 @@ export default function Discover() {
   // Auto-seed/update content if empty or missing URLs
   useEffect(() => {
     if (feed) {
-      // Check if we have any articles that are missing URLs
+      // Check if we have any articles that are missing URLs or have placeholder URLs
       const hasIncompleteData = feed.some(item => 
-        (item.type === 'article' || item.type === 'video') && !item.url
+        (item.type === 'article' || item.type === 'video') && 
+        (!item.url || item.url.includes("example"))
       );
       
       const needsUpdate = feed.length === 0 || hasIncompleteData;
       
       if (needsUpdate) {
+        toast.info("Refreshing content library with valid sources...");
         seedContent();
       }
     }

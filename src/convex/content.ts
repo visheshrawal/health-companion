@@ -138,9 +138,9 @@ export const seedContent = mutation({
         type: "article",
         body: "Living with diabetes requires a comprehensive approach to health. Key pillars include monitoring blood sugar, maintaining a balanced diet rich in fiber and low in simple sugars, and regular physical activity. Consistency is key.",
         tags: ["Diabetes", "General"],
-        source: "Mayo Clinic",
+        source: "NIDDK",
         imageUrl: "https://images.unsplash.com/photo-1576091160550-217358c7b818?auto=format&fit=crop&q=80&w=1000",
-        url: "https://www.mayoclinic.org/diseases-conditions/diabetes/symptoms-causes/syc-20371444",
+        url: "https://www.niddk.nih.gov/health-information/diabetes/overview/managing-diabetes",
         publishedAt: Date.now(),
         author: "Dr. Sarah Smith"
       },
@@ -149,9 +149,9 @@ export const seedContent = mutation({
         type: "article",
         body: "Reducing sodium doesn't mean sacrificing flavor. Try these delicious alternatives using herbs, spices, and citrus to season your food. 1. Lemon Herb Chicken... 2. Garlic Roasted Veggies... 3. Spicy Bean Chili...",
         tags: ["Hypertension", "Heart Health"],
-        source: "Heart Foundation",
+        source: "CDC",
         imageUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1000",
-        url: "https://www.heart.org/en/healthy-living/healthy-eating/eat-smart/sodium/low-sodium-recipes",
+        url: "https://www.cdc.gov/salt/reduce_sodium_tips.htm",
         publishedAt: Date.now() - 86400000,
         author: "Chef Mike"
       },
@@ -165,8 +165,8 @@ export const seedContent = mutation({
       {
         title: "Gentle Yoga for Arthritis",
         type: "video",
-        body: "A 5-minute routine to help reduce joint pain and improve flexibility. Suitable for beginners.",
-        url: "https://www.youtube.com/watch?v=example",
+        body: "A gentle yoga routine designed to help reduce joint pain and improve flexibility. Suitable for beginners and those with arthritis.",
+        url: "https://www.youtube.com/watch?v=v7AYKMP6rOE",
         tags: ["Arthritis", "Exercise"],
         imageUrl: "https://images.unsplash.com/photo-1544367563-12123d8965cd?auto=format&fit=crop&q=80&w=1000",
         publishedAt: Date.now() - 259200000,
@@ -177,9 +177,9 @@ export const seedContent = mutation({
         type: "article",
         body: "Systolic vs Diastolic: What do the numbers mean? Systolic (top number) measures pressure when your heart beats. Diastolic (bottom number) measures pressure between beats.",
         tags: ["Hypertension", "General"],
-        source: "CDC",
+        source: "American Heart Association",
         imageUrl: "https://images.unsplash.com/photo-1628348068343-c6a848d2b6dd?auto=format&fit=crop&q=80&w=1000",
-        url: "https://www.cdc.gov/bloodpressure/about.htm",
+        url: "https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings",
         publishedAt: Date.now() - 400000000,
       },
       {
@@ -187,9 +187,9 @@ export const seedContent = mutation({
         type: "article",
         body: "Walking is a simple, low-impact way to improve your health. It can help lower blood pressure, improve mood, and support weight management.",
         tags: ["General", "Exercise"],
-        source: "Healthline",
+        source: "Mayo Clinic",
         imageUrl: "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&q=80&w=1000",
-        url: "https://www.healthline.com/health/benefits-of-walking",
+        url: "https://www.mayoclinic.org/healthy-lifestyle/fitness/in-depth/walking/art-20046261",
         publishedAt: Date.now() - 500000000,
       },
       {
@@ -202,12 +202,12 @@ export const seedContent = mutation({
       {
         title: "Meditation for Stress Relief",
         type: "video",
-        body: "A guided meditation to help you relax and reduce stress levels.",
-        url: "https://www.youtube.com/watch?v=example2",
+        body: "A guided meditation to help you relax and reduce stress levels. Take 10 minutes for yourself.",
+        url: "https://www.youtube.com/watch?v=ssss7V1_eyA",
         tags: ["Mental Health", "Wellness"],
         imageUrl: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&q=80&w=1000",
         publishedAt: Date.now() - 700000000,
-        source: "Headspace"
+        source: "Great Meditation"
       },
       {
         title: "Healthy Sleep Habits",
@@ -225,6 +225,27 @@ export const seedContent = mutation({
         body: "Take 3 deep breaths. Inhale for 4 seconds, hold for 4 seconds, exhale for 4 seconds. Repeat.",
         tags: ["Mental Health", "Stress"],
         publishedAt: Date.now() - 900000000,
+      },
+      // New Content
+      {
+        title: "10 Superfoods for Heart Health",
+        type: "article",
+        body: "Incorporating these nutrient-rich foods into your diet can help lower cholesterol and blood pressure.",
+        tags: ["Heart Health", "Nutrition"],
+        source: "Healthline",
+        imageUrl: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=1000",
+        url: "https://www.healthline.com/nutrition/heart-healthy-foods",
+        publishedAt: Date.now() - 100000000,
+      },
+      {
+        title: "Morning Stretch Routine",
+        type: "video",
+        body: "Start your day with energy using this simple 10-minute full body stretch routine.",
+        url: "https://www.youtube.com/watch?v=sAf67xFS-qA",
+        tags: ["Exercise", "Wellness"],
+        imageUrl: "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&q=80&w=1000",
+        publishedAt: Date.now() - 200000000,
+        source: "MadFit"
       }
     ];
 
@@ -236,9 +257,10 @@ export const seedContent = mutation({
       const existing = existingMap.get(item.title);
 
       if (existing) {
-        // Update if missing URL or Image, or just to ensure data is fresh
-        // Also update if the URL in seed is different (e.g. we fixed a broken link)
-        if ((!existing.url && item.url) || (item.url && existing.url !== item.url)) {
+        // Update if missing URL, has placeholder URL, or just to ensure data is fresh
+        if ((!existing.url && item.url) || 
+            (existing.url && existing.url.includes("example")) ||
+            (item.url && existing.url !== item.url)) {
            await ctx.db.patch(existing._id, {
              url: item.url,
              imageUrl: item.imageUrl || existing.imageUrl,
