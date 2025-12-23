@@ -23,6 +23,7 @@ export default function PatientAppointments() {
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  const [bookingReason, setBookingReason] = useState("");
 
   // Fetch slots when rescheduling or booking
   // For booking: we need selectedDoctor and selectedDate
@@ -65,13 +66,14 @@ export default function PatientAppointments() {
       await createAppointment({
         doctorId: selectedDoctor._id,
         date: selectedSlot,
-        notes: "Booked via patient portal",
+        notes: bookingReason,
       });
       toast.success("Appointment booked successfully");
       setIsBooking(false);
       setSelectedDoctor(null);
       setSelectedDate(undefined);
       setSelectedSlot(null);
+      setBookingReason("");
     } catch (error) {
       toast.error("Failed to book appointment");
     }
@@ -100,6 +102,7 @@ export default function PatientAppointments() {
                 setSelectedDoctor(null);
                 setSelectedDate(undefined);
                 setSelectedSlot(null);
+                setBookingReason("");
               }
             }}>
               <DialogTrigger asChild>
@@ -109,7 +112,7 @@ export default function PatientAppointments() {
                 <DialogHeader>
                   <DialogTitle>{selectedDoctor ? `Book with Dr. ${selectedDoctor.name}` : "Find a Doctor"}</DialogTitle>
                   <DialogDescription>
-                    {selectedDoctor ? "Select a date and time for your appointment." : "Choose a doctor to view available times."}
+                    {selectedDoctor ? "Select a date, time, and provide details for your visit." : "Choose a doctor to view available times."}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -133,59 +136,80 @@ export default function PatientAppointments() {
                     {doctors?.length === 0 && <p className="text-center text-muted-foreground">No doctors found.</p>}
                   </div>
                 ) : (
-                  <div className="flex flex-col md:flex-row gap-6 py-4">
-                    <div className="flex-1">
-                      <Button variant="ghost" size="sm" onClick={() => { setSelectedDoctor(null); setSelectedDate(undefined); setSelectedSlot(null); }} className="mb-4">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Doctors
-                      </Button>
-                      
-                      <div className="border rounded-lg p-4 flex justify-center">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={setSelectedDate}
-                          disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
-                          className="rounded-md border shadow"
-                        />
+                  <div className="flex flex-col gap-6 py-4">
+                    <Button variant="ghost" size="sm" onClick={() => { setSelectedDoctor(null); setSelectedDate(undefined); setSelectedSlot(null); setBookingReason(""); }} className="self-start -ml-2">
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Doctors
+                    </Button>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-4">
+                        <h3 className="font-medium flex items-center gap-2">
+                          <CalendarIcon className="h-4 w-4" /> Select Date
+                        </h3>
+                        <div className="border rounded-lg p-4 flex justify-center bg-card/50">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => {
+                              setSelectedDate(date);
+                              setSelectedSlot(null);
+                            }}
+                            disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                            className="rounded-md border shadow"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h3 className="font-medium flex items-center gap-2">
+                          <Clock className="h-4 w-4" /> Select Time
+                        </h3>
+                        {!selectedDate ? (
+                          <div className="flex items-center justify-center h-[300px] border rounded-lg border-dashed text-muted-foreground bg-muted/20">
+                            Select a date to view slots
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                            {slots ? (
+                              slots.length > 0 ? (
+                                slots.map((slot: any) => (
+                                  <Button
+                                    key={slot.date}
+                                    variant={selectedSlot === slot.date ? "default" : "outline"}
+                                    className={`
+                                      w-full text-xs h-9
+                                      ${!slot.available ? "opacity-50 cursor-not-allowed bg-muted" : ""}
+                                    `}
+                                    disabled={!slot.available}
+                                    onClick={() => setSelectedSlot(slot.date)}
+                                  >
+                                    {format(slot.date, "h:mm a")}
+                                  </Button>
+                                ))
+                              ) : (
+                                <div className="col-span-3 text-center py-12 text-muted-foreground border rounded-lg border-dashed">
+                                  No slots available on this date.
+                                </div>
+                              )
+                            ) : (
+                              <div className="col-span-3 text-center py-12">Loading slots...</div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex-1 space-y-4">
-                      <h3 className="font-medium">Available Slots</h3>
-                      {!selectedDate ? (
-                        <div className="flex items-center justify-center h-40 border rounded-lg border-dashed text-muted-foreground">
-                          Select a date to view slots
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
-                          {slots ? (
-                            slots.length > 0 ? (
-                              slots.map((slot: any) => (
-                                <Button
-                                  key={slot.date}
-                                  variant={selectedSlot === slot.date ? "default" : "outline"}
-                                  className={`
-                                    w-full justify-start
-                                    ${!slot.available ? "opacity-50 cursor-not-allowed bg-muted" : ""}
-                                  `}
-                                  disabled={!slot.available}
-                                  onClick={() => setSelectedSlot(slot.date)}
-                                >
-                                  <Clock className="mr-2 h-4 w-4" />
-                                  {format(slot.date, "h:mm a")}
-                                </Button>
-                              ))
-                            ) : (
-                              <div className="col-span-2 text-center py-8 text-muted-foreground">
-                                No slots available on this date.
-                              </div>
-                            )
-                          ) : (
-                            <div className="col-span-2 text-center py-8">Loading slots...</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    {selectedSlot && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                        <h3 className="font-medium">Reason for Visit / Symptoms</h3>
+                        <textarea
+                          className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          placeholder="Please describe your symptoms or reason for booking..."
+                          value={bookingReason}
+                          onChange={(e) => setBookingReason(e.target.value)}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -193,7 +217,7 @@ export default function PatientAppointments() {
                   <Button variant="outline" onClick={() => setIsBooking(false)}>Cancel</Button>
                   {selectedDoctor && (
                     <Button onClick={handleBook} disabled={!selectedSlot}>
-                      Book Appointment
+                      Confirm Booking
                     </Button>
                   )}
                 </DialogFooter>
