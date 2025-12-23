@@ -60,13 +60,8 @@ export default function Discover() {
   };
 
   const handleCardClick = (item: any) => {
-    // If it's an article or video with a URL, open in new tab
-    if (item.url && (item.type === "article" || item.type === "video")) {
-      window.open(item.url, "_blank");
-    } else {
-      // Otherwise open the dialog (e.g. for tips or internal content)
-      setViewContent(item);
-    }
+    // Always open the dialog to view details/summary first, allowing user to choose to read full article
+    setViewContent(item);
   };
 
   const filteredFeed = feed?.filter(item => {
@@ -126,26 +121,24 @@ export default function Discover() {
                 onClick={() => handleCardClick(item)}
               >
                 <div className="flex flex-col md:flex-row">
-                  {item.imageUrl && (
-                    <div className="md:w-1/3 h-48 md:h-auto relative overflow-hidden">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.title} 
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
-                        onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000";
-                        }}
-                      />
-                      {item.type === "video" && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors">
-                          <div className="h-12 w-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                            <Play className="h-5 w-5 text-primary ml-1" />
-                          </div>
+                  <div className="md:w-1/3 h-48 md:h-auto relative overflow-hidden bg-muted">
+                    <img 
+                      src={item.imageUrl || "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000"} 
+                      alt={item.title} 
+                      className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000";
+                      }}
+                    />
+                    {item.type === "video" && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors">
+                        <div className="h-12 w-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
+                          <Play className="h-5 w-5 text-primary ml-1" />
                         </div>
-                      )}
-                    </div>
-                  )}
-                  <div className={`flex-1 flex flex-col ${!item.imageUrl ? 'p-0' : ''}`}>
+                      </div>
+                    )}
+                  </div>
+                  <div className={`flex-1 flex flex-col`}>
                     <CardHeader>
                       <div className="flex justify-between items-start gap-4">
                         <div className="space-y-1">
@@ -238,16 +231,14 @@ export default function Discover() {
             </DialogHeader>
             
             <div className="space-y-6">
-              {viewContent?.imageUrl && (
-                <img 
-                  src={viewContent.imageUrl} 
-                  alt={viewContent.title} 
-                  className="w-full h-64 object-cover rounded-lg"
-                  onError={(e) => {
-                    e.currentTarget.src = "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000";
-                  }}
-                />
-              )}
+              <img 
+                src={viewContent?.imageUrl || "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000"} 
+                alt={viewContent?.title} 
+                className="w-full h-64 object-cover rounded-lg"
+                onError={(e) => {
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000";
+                }}
+              />
               
               <div className="prose dark:prose-invert max-w-none">
                 <p className="whitespace-pre-wrap text-lg leading-relaxed">{viewContent?.body}</p>

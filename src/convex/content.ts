@@ -48,9 +48,8 @@ export const getFeed = query({
       if (daysOld < 7) score += 2;
 
       // Randomize score if seed provided to keep feed fresh
-      if (args.seed) {
+      if (args.seed !== undefined) {
         // Simple pseudo-random based on seed and item creation time
-        // We use sin to get a deterministic random-like value between 0 and 10
         const randomVal = (Math.abs(Math.sin(args.seed + item._creationTime)) * 10); 
         score += randomVal;
       }
@@ -125,8 +124,8 @@ export const toggleLike = mutation({
 export const seedContent = mutation({
   args: {},
   handler: async (ctx) => {
-    const existing = await ctx.db.query("content").take(1);
-    if (existing.length > 0) return; // Already seeded
+    const existingCount = (await ctx.db.query("content").take(20)).length;
+    if (existingCount >= 10) return; // Already seeded enough
 
     const initialContent = [
       {
@@ -143,7 +142,7 @@ export const seedContent = mutation({
       {
         title: "5 Low-Sodium Recipes for Heart Health",
         type: "article",
-        body: "Reducing sodium doesn't mean sacrificing flavor. Try these delicious alternatives using herbs, spices, and citrus to season your food. 1. Lemon Herb Chicken... 2. Garlic Roasted Veggies...",
+        body: "Reducing sodium doesn't mean sacrificing flavor. Try these delicious alternatives using herbs, spices, and citrus to season your food. 1. Lemon Herb Chicken... 2. Garlic Roasted Veggies... 3. Spicy Bean Chili...",
         tags: ["Hypertension", "Heart Health"],
         source: "Heart Foundation",
         imageUrl: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=1000",
