@@ -15,6 +15,8 @@ export const trigger = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
+    console.log(`[SOS] Triggered by user ${userId}`);
+
     const user: any = await ctx.runQuery(api.users.currentUser);
     
     if (!user) throw new Error("User not found");
@@ -24,6 +26,7 @@ export const trigger = action({
     }
 
     if (!user.patientProfile?.emergencyContact?.email) {
+      console.error(`[SOS] User ${userId} has no emergency contact email`);
       throw new Error("No emergency contact email configured. Please update your profile.");
     }
 
@@ -32,8 +35,11 @@ export const trigger = action({
     const patientProfile = user.patientProfile;
     
     if (!process.env.VLY_INTEGRATION_KEY) {
+      console.error("[SOS] VLY_INTEGRATION_KEY is missing");
       throw new Error("System Error: VLY_INTEGRATION_KEY is not set");
     }
+
+    console.log(`[SOS] Preparing to send email to ${contactEmail}`);
 
     // Initialize Vly Integration
     const vly = new VlyIntegrations({
@@ -116,6 +122,8 @@ export const trigger = action({
         html: html,
       });
 
+      console.log(`[SOS] Email sent successfully to ${contactEmail}`);
+
       // Log success
       await ctx.runMutation(internal.sosLogs.logEvent, {
         userId,
@@ -133,7 +141,7 @@ export const trigger = action({
         message: `🆘 Emergency alert sent to ${contactName} at ${contactEmail}. Help is on the way.` 
       };
     } catch (error: any) {
-      console.error("Email error:", error);
+      console.error("[SOS] Email sending failed:", error);
       
       // Log failure
       await ctx.runMutation(internal.sosLogs.logEvent, {

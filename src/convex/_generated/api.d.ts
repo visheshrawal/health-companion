@@ -11,6 +11,7 @@
 import type * as appointments from "../appointments.js";
 import type * as auth from "../auth.js";
 import type * as cleanup from "../cleanup.js";
+import type * as debug from "../debug.js";
 import type * as http from "../http.js";
 import type * as medicalRecords from "../medicalRecords.js";
 import type * as medications from "../medications.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   appointments: typeof appointments;
   auth: typeof auth;
   cleanup: typeof cleanup;
+  debug: typeof debug;
   http: typeof http;
   medicalRecords: typeof medicalRecords;
   medications: typeof medications;
