@@ -1,2 +1,1 @@
-node inspect_vly.cjs
-
+ls -R node_modules/@vly-ai/integrations
