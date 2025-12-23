@@ -33,9 +33,17 @@ export function SymptomChecker({ children }: { children: React.ReactNode }) {
     try {
       const data = await analyzeSymptoms({ symptoms });
       setResult(data);
-    } catch (error) {
-      toast.error("Failed to analyze symptoms. Please try again.");
+    } catch (error: any) {
       console.error(error);
+      // Extract a more user-friendly message if possible
+      let errorMessage = error.message || "Failed to analyze symptoms. Please try again.";
+      
+      // Clean up Convex error wrapping
+      if (errorMessage.includes("Analysis failed:")) {
+        errorMessage = errorMessage.split("Analysis failed:")[1].trim();
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsAnalyzing(false);
     }

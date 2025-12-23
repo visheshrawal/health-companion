@@ -42,18 +42,19 @@ export const analyzeSymptoms = action({
       );
 
       if (!response.ok) {
-        throw new Error(`Gemini API Error: ${response.statusText}`);
+        const errorText = await response.text();
+        throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
       }
 
       const data = await response.json();
       const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!textResponse) {
-        throw new Error("No response from AI");
+        throw new Error("No response content from AI");
       }
 
-      // Clean up potential markdown code blocks
-      const jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+      // Clean up potential markdown code blocks and extract JSON
+      let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
 
       const result = JSON.parse(jsonString);
       return result;
