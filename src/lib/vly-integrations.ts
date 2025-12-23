@@ -1,9 +1,15 @@
-import { VlyIntegrations } from "@vly-ai/integrations";
+// import { VlyIntegrations } from "@vly-ai/integrations";
 
-if (!process.env.VLY_INTEGRATION_KEY) {
-  throw new Error("VLY_INTEGRATION_KEY is not set");
-}
+// export const vly = new VlyIntegrations({
+//   token: process.env.VLY_INTEGRATION_KEY!,
+// });
 
-export const vly = new VlyIntegrations({
-  token: process.env.VLY_INTEGRATION_KEY!,
-} as any);
+// Mock export to prevent build errors if imported elsewhere
+export const vly = {
+  ai: {
+    completion: async () => ({ success: false, error: "Integration disabled" })
+  },
+  email: {
+    send: async () => ({ success: false, error: "Integration disabled" })
+  }
+};
