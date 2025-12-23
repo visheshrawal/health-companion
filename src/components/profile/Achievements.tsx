@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Medal, BookOpen, Shield, FileText, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-// @ts-ignore
 import confetti from "canvas-confetti";
 import { useEffect, useRef } from "react";
 
