@@ -3,6 +3,7 @@ import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+// @ts-ignore
 import { VlyIntegrations } from "@vly-ai/integrations";
 
 export const trigger = action({

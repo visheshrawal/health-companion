@@ -1,7 +1,9 @@
-import { Home, Pill, Calendar, User } from "lucide-react";
+import { Home, Pill, Calendar, User, Stethoscope } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
+import { SymptomChecker } from "@/components/SymptomChecker";
+import { Button } from "@/components/ui/button";
 
 export function PatientNav() {
   const location = useLocation();
@@ -33,6 +35,12 @@ export function PatientNav() {
             </Link>
           );
         })}
+        <SymptomChecker>
+          <button className="flex flex-col items-center p-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground">
+            <Stethoscope className="h-6 w-6" />
+            <span className="text-xs mt-1 font-medium">Check</span>
+          </button>
+        </SymptomChecker>
       </div>
     </div>
   );
@@ -49,7 +57,7 @@ export function PatientLayout({ children }: { children: React.ReactNode }) {
             </div>
             <span className="font-bold text-xl">Health Companion</span>
           </div>
-          <nav className="space-y-2">
+          <nav className="space-y-2 flex-1">
             <Link to="/patient" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
               <Home className="h-5 w-5" />
               Home
@@ -67,6 +75,15 @@ export function PatientLayout({ children }: { children: React.ReactNode }) {
               Profile
             </Link>
           </nav>
+          
+          <div className="mt-auto pt-4 border-t">
+            <SymptomChecker>
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <Stethoscope className="h-4 w-4" />
+                Symptom Checker
+              </Button>
+            </SymptomChecker>
+          </div>
         </aside>
         <main className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full">
           {children}

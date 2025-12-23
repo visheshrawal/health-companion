@@ -1,6 +1,7 @@
 "use node";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
+// @ts-ignore
 import { VlyIntegrations } from "@vly-ai/integrations";
 
 export const testEmail = action({
