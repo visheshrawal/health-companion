@@ -77,6 +77,41 @@ export const listForDoctor = query({
   },
 });
 
+export const getCompletedAppointments = query({
+  args: {
+    doctorId: v.optional(v.id("users")),
+    start: v.number(),
+    end: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) return [];
+    
+    // If doctorId is not provided, use the current user's ID (assuming they are a doctor)
+    // But we need to find the user record first to get the ID if we rely on auth
+    // For now, let's assume the frontend passes the ID or we look it up.
+    // Better to look up the user from auth to be secure.
+    
+    const userRecord = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", user.email!))
+      .unique();
+      
+    if (!userRecord) return [];
+    
+    const doctorId = args.doctorId || userRecord._id;
+
+    const appointments = await ctx.db
+      .query("appointments")
+      .withIndex("by_doctor_and_date", (q) => 
+        q.eq("doctorId", doctorId).gte("date", args.start).lte("date", args.end)
+      )
+      .collect();
+      
+    return appointments.filter(a => a.status === "completed");
+  }
+});
+
 export const requestReschedule = mutation({
   args: {
     appointmentId: v.id("appointments"),
