@@ -1,14 +1,13 @@
 "use node";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-// import { VlyIntegrations } from "@vly-ai/integrations"; // Temporarily disabled
+import { VlyIntegrations } from "@vly-ai/integrations";
 
 export const testEmail = action({
   args: { email: v.string() },
   handler: async (ctx, args) => {
-    console.log("Testing Vly Email Integration (Mocked)...");
+    console.log("Testing Vly Email Integration...");
     
-    /*
     if (!process.env.VLY_INTEGRATION_KEY) {
       console.error("VLY_INTEGRATION_KEY is missing");
       return { success: false, error: "VLY_INTEGRATION_KEY is not set" };
@@ -17,7 +16,7 @@ export const testEmail = action({
     try {
       const vly = new VlyIntegrations({
         token: process.env.VLY_INTEGRATION_KEY!,
-      } as any);
+      });
 
       console.log("Sending test email to:", args.email);
       await vly.email.send({
@@ -32,8 +31,5 @@ export const testEmail = action({
       console.error("Test email failed:", error);
       return { success: false, error: error.message || String(error) };
     }
-    */
-   
-    return { success: true, message: "Email simulation successful (Integration disabled)" };
   },
 });

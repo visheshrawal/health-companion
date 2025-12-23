@@ -3,7 +3,7 @@ import { action } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
-// import { VlyIntegrations } from "@vly-ai/integrations"; // Temporarily disabled
+import { VlyIntegrations } from "@vly-ai/integrations";
 
 export const trigger = action({
   args: {
@@ -32,37 +32,74 @@ export const trigger = action({
 
     const { name: contactName, email: contactEmail } = user.patientProfile.emergencyContact;
     
-    // Temporary: Skip Vly Integration to fix deployment
-    /*
     if (!process.env.VLY_INTEGRATION_KEY) {
       console.error("[SOS] VLY_INTEGRATION_KEY is missing");
       throw new Error("System Error: VLY_INTEGRATION_KEY is not set");
     }
 
-    const vly = new VlyIntegrations({
-      token: process.env.VLY_INTEGRATION_KEY!,
-    } as any);
-    
-    // ... email sending logic ...
-    */
+    try {
+      const vly = new VlyIntegrations({
+        token: process.env.VLY_INTEGRATION_KEY!,
+      });
+      
+      const locationText = args.location ? `<p><strong>Location:</strong> <a href="${args.location}">${args.location}</a></p>` : "";
+      const coordinatesText = args.latitude && args.longitude ? `<p>Coordinates: ${args.latitude}, ${args.longitude}</p>` : "";
 
-    console.log(`[SOS] Mocking email send to ${contactEmail}`);
+      console.log(`[SOS] Sending email to ${contactEmail}`);
+      
+      await vly.email.send({
+        to: contactEmail,
+        subject: `SOS: Emergency Alert from ${user.name}`,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <h1 style="color: #ef4444;">SOS EMERGENCY ALERT</h1>
+            <p><strong>${user.name}</strong> has triggered an emergency alert.</p>
+            <p>Please contact them immediately or take appropriate action.</p>
+            ${locationText}
+            ${coordinatesText}
+            <p>Time: ${new Date().toLocaleString()}</p>
+            <hr />
+            <p style="font-size: 12px; color: #666;">This is an automated message from Health Companion.</p>
+          </div>
+        `,
+      });
 
-    // Log success (Mock)
-    await ctx.runMutation(internal.sosLogs.logEvent, {
-      userId,
-      contactName,
-      contactEmail,
-      location: args.location,
-      latitude: args.latitude,
-      longitude: args.longitude,
-      status: "simulated",
-      sentAt: Date.now(),
-    });
+      console.log(`[SOS] Email sent successfully to ${contactEmail}`);
 
-    return { 
-      success: true, 
-      message: `🆘 Emergency alert simulated to ${contactName}.` 
-    };
+      // Log success
+      await ctx.runMutation(internal.sosLogs.logEvent, {
+        userId,
+        contactName,
+        contactEmail,
+        location: args.location,
+        latitude: args.latitude,
+        longitude: args.longitude,
+        status: "sent",
+        sentAt: Date.now(),
+      });
+
+      return { 
+        success: true, 
+        message: `🆘 Emergency alert sent to ${contactName}.` 
+      };
+
+    } catch (error: any) {
+      console.error("[SOS] Failed to send email:", error);
+      
+      // Log failure
+      await ctx.runMutation(internal.sosLogs.logEvent, {
+        userId,
+        contactName,
+        contactEmail,
+        location: args.location,
+        latitude: args.latitude,
+        longitude: args.longitude,
+        status: "failed",
+        error: error.message || String(error),
+        sentAt: Date.now(),
+      });
+
+      throw new Error("Failed to send emergency alert. Please try again or call emergency services directly.");
+    }
   },
 });

@@ -27,7 +27,7 @@ export default function PatientHome() {
   const appointments = useQuery(api.appointments.listForPatient);
   const streak = useQuery(api.medications.getStreak);
   const toggleTaken = useMutation(api.medications.toggleTaken);
-  // const sendSOS = useAction(api.sos.trigger); // Temporarily disabled due to deployment issues
+  const sendSOS = useAction(api.sos.trigger);
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
   const [isSendingSOS, setIsSendingSOS] = useState(false);
@@ -43,32 +43,18 @@ export default function PatientHome() {
     setIsSendingSOS(true);
     toast.info("Initiating Emergency Alert...");
     
-    // Temporary local SOS handler
     const executeSOS = async (locationData: any) => {
-      // 1. Get user data
-      const patientName = user?.name || "Patient";
-      const contact = user?.patientProfile?.emergencyContact;
-      
-      // 2. Log locally
-      console.log('SOS Triggered:', {
-        patient: patientName,
-        contact: contact,
-        time: new Date().toISOString(),
-        location: locationData
-      });
-
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      if (!contact || !contact.email) {
-        throw new Error("No emergency contact email configured.");
+      try {
+        const result = await sendSOS({
+          location: locationData.location,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+        });
+        return result;
+      } catch (error: any) {
+        console.error("SOS Error:", error);
+        throw new Error(error.message || "Failed to send SOS");
       }
-
-      // 3. Show immediate UI feedback (Simulated success)
-      return {
-        success: true,
-        message: `🆘 SOS Alert! Emergency email simulated to ${contact.name} (${contact.email})`
-      };
     };
 
     if (!navigator.geolocation) {
