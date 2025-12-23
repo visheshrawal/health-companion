@@ -253,11 +253,11 @@ export default function Profile() {
             </TabsTrigger>
             <TabsTrigger value="records" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Records</span>
+              <span className="hidden sm:inline">{user.role === "doctor" ? "Documents" : "Records"}</span>
             </TabsTrigger>
             <TabsTrigger value="achievements" className="flex items-center gap-2">
               <Trophy className="h-4 w-4" />
-              <span className="hidden sm:inline">Badges</span>
+              <span className="hidden sm:inline">{user.role === "doctor" ? "Milestones" : "Badges"}</span>
             </TabsTrigger>
             <TabsTrigger value="edit" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -282,11 +282,12 @@ export default function Profile() {
               recordInputRef={recordInputRef}
               handleRecordUpload={handleRecordUpload}
               removeMedicalRecord={removeMedicalRecord}
+              role={user.role as "patient" | "doctor"}
             />
           </TabsContent>
           
           <TabsContent value="achievements" className="mt-6">
-            <Achievements />
+            <Achievements role={user.role as "patient" | "doctor"} />
           </TabsContent>
 
           <TabsContent value="edit" className="mt-6">

@@ -1,24 +1,31 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, FileText, Trash2 } from "lucide-react";
+import { Upload, FileText, Trash2, GraduationCap } from "lucide-react";
 
 interface MedicalRecordsProps {
   medicalRecords: any[];
   recordInputRef: any;
   handleRecordUpload: any;
   removeMedicalRecord: any;
+  role?: "patient" | "doctor";
 }
 
-export function MedicalRecords({ medicalRecords, recordInputRef, handleRecordUpload, removeMedicalRecord }: MedicalRecordsProps) {
+export function MedicalRecords({ medicalRecords, recordInputRef, handleRecordUpload, removeMedicalRecord, role = "patient" }: MedicalRecordsProps) {
+  const isDoctor = role === "doctor";
+  
   return (
     <Card className="glass">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Medical Records</CardTitle>
-          <CardDescription>Upload and manage your medical history documents.</CardDescription>
+          <CardTitle>{isDoctor ? "Professional Documents" : "Medical Records"}</CardTitle>
+          <CardDescription>
+            {isDoctor 
+              ? "Upload and manage your degrees, certifications, and research papers." 
+              : "Upload and manage your medical history documents."}
+          </CardDescription>
         </div>
         <Button onClick={() => recordInputRef.current?.click()}>
-          <Upload className="mr-2 h-4 w-4" /> Upload Record
+          <Upload className="mr-2 h-4 w-4" /> {isDoctor ? "Upload Document" : "Upload Record"}
         </Button>
         <input 
           type="file" 
@@ -34,7 +41,7 @@ export function MedicalRecords({ medicalRecords, recordInputRef, handleRecordUpl
             <div key={record._id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50 hover:bg-accent/50 transition-colors">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                  <FileText className="h-5 w-5" />
+                  {isDoctor ? <GraduationCap className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                 </div>
                 <div>
                   <p className="font-medium truncate max-w-[200px] md:max-w-md">{record.title}</p>
@@ -55,7 +62,7 @@ export function MedicalRecords({ medicalRecords, recordInputRef, handleRecordUpl
           ))}
           {medicalRecords?.length === 0 && (
             <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-xl">
-              No records uploaded yet.
+              {isDoctor ? "No professional documents uploaded yet." : "No records uploaded yet."}
             </div>
           )}
         </div>

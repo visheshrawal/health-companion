@@ -2,13 +2,13 @@ import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, Medal, BookOpen, Shield, FileText, Lock } from "lucide-react";
+import { Trophy, Medal, BookOpen, Shield, FileText, Lock, Users, Star, Stethoscope } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import confetti from "canvas-confetti";
 import { useEffect, useRef } from "react";
 
 // Must match backend definitions
-const ACHIEVEMENTS_METADATA = [
+const PATIENT_ACHIEVEMENTS_METADATA = [
   {
     id: "consistency_champion_7",
     title: "Consistency Champion",
@@ -66,7 +66,69 @@ const ACHIEVEMENTS_METADATA = [
   }
 ];
 
-export function Achievements() {
+const DOCTOR_ACHIEVEMENTS_METADATA = [
+  {
+    id: "practice_novice",
+    title: "Dedicated Healer",
+    subtitle: "1 Year Practice",
+    description: "Practicing medicine for 1 year",
+    icon: Medal,
+    color: "text-blue-500",
+    bgColor: "bg-blue-100 dark:bg-blue-900/20",
+    target: 1,
+    progressKey: "years_practice"
+  },
+  {
+    id: "practice_expert",
+    title: "Experienced Practitioner",
+    subtitle: "5 Years Practice",
+    description: "Practicing medicine for 5 years",
+    icon: Trophy,
+    color: "text-purple-500",
+    bgColor: "bg-purple-100 dark:bg-purple-900/20",
+    target: 5,
+    progressKey: "years_practice"
+  },
+  {
+    id: "patients_100",
+    title: "Community Caretaker",
+    subtitle: "100 Patients",
+    description: "Treated 100 patients",
+    icon: Users,
+    color: "text-green-500",
+    bgColor: "bg-green-100 dark:bg-green-900/20",
+    target: 100,
+    progressKey: "patients_treated"
+  },
+  {
+    id: "patients_1000",
+    title: "Medical Pillar",
+    subtitle: "1,000 Patients",
+    description: "Treated 1,000 patients",
+    icon: Star,
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-100 dark:bg-yellow-900/20",
+    target: 1000,
+    progressKey: "patients_treated"
+  },
+  {
+    id: "research_contributor",
+    title: "Research Contributor",
+    subtitle: "First Upload",
+    description: "Upload a research paper or professional document",
+    icon: FileText,
+    color: "text-orange-500",
+    bgColor: "bg-orange-100 dark:bg-orange-900/20",
+    target: 1,
+    progressKey: "reports_uploaded"
+  }
+];
+
+interface AchievementsProps {
+  role?: "patient" | "doctor";
+}
+
+export function Achievements({ role = "patient" }: AchievementsProps) {
   const data = useQuery(api.achievements.get);
   const prevUnlockedRef = useRef<string[]>([]);
 
@@ -90,12 +152,20 @@ export function Achievements() {
 
   if (!data) return <div className="p-8 text-center text-muted-foreground">Loading achievements...</div>;
 
+  const achievementsList = role === "doctor" ? DOCTOR_ACHIEVEMENTS_METADATA : PATIENT_ACHIEVEMENTS_METADATA;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Achievements</h2>
-          <p className="text-muted-foreground">Track your health milestones and earn badges.</p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            {role === "doctor" ? "Professional Milestones" : "Achievements"}
+          </h2>
+          <p className="text-muted-foreground">
+            {role === "doctor" 
+              ? "Track your career progress and impact." 
+              : "Track your health milestones and earn badges."}
+          </p>
         </div>
         <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
           <Trophy className="h-5 w-5 text-primary" />
@@ -104,7 +174,7 @@ export function Achievements() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {ACHIEVEMENTS_METADATA.map((achievement) => {
+        {achievementsList.map((achievement) => {
           const isUnlocked = data.unlocked.includes(achievement.id);
           const currentProgress = data.progress[achievement.progressKey] || 0;
           const progressPercent = Math.min(100, (currentProgress / achievement.target) * 100);

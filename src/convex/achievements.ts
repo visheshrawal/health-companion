@@ -3,7 +3,7 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 // Achievement Definitions
-export const ACHIEVEMENTS = [
+export const PATIENT_ACHIEVEMENTS = [
   {
     id: "consistency_champion_7",
     title: "Consistency Champion (Week)",
@@ -54,6 +54,57 @@ export const ACHIEVEMENTS = [
   }
 ];
 
+export const DOCTOR_ACHIEVEMENTS = [
+  {
+    id: "practice_novice",
+    title: "Dedicated Healer",
+    description: "Practicing medicine for 1 year",
+    icon: "medal",
+    points: 100,
+    type: "time",
+    target: 1
+  },
+  {
+    id: "practice_expert",
+    title: "Experienced Practitioner",
+    description: "Practicing medicine for 5 years",
+    icon: "trophy",
+    points: 500,
+    type: "time",
+    target: 5
+  },
+  {
+    id: "patients_100",
+    title: "Community Caretaker",
+    description: "Treated 100 patients",
+    icon: "users",
+    points: 200,
+    type: "progress",
+    target: 100,
+    progressKey: "patients_treated"
+  },
+  {
+    id: "patients_1000",
+    title: "Medical Pillar",
+    description: "Treated 1,000 patients",
+    icon: "star",
+    points: 1000,
+    type: "progress",
+    target: 1000,
+    progressKey: "patients_treated"
+  },
+  {
+    id: "research_contributor",
+    title: "Research Contributor",
+    description: "Upload a research paper or professional document",
+    icon: "file",
+    points: 150,
+    type: "one_time",
+    target: 1,
+    progressKey: "reports_uploaded"
+  }
+];
+
 export const get = query({
   args: {},
   handler: async (ctx) => {
@@ -86,7 +137,10 @@ export const updateProgress = mutation({
 
     let achievements = user.achievements || {
       unlocked: [],
-      progress: {},
+      progress: {
+        patients_treated: 0, // Initialize default for doctors
+        reports_uploaded: 0,
+      },
       totalScore: 0,
     };
 
@@ -105,7 +159,10 @@ export const updateProgress = mutation({
     // Check for unlocks
     const newlyUnlocked: string[] = [];
     
-    for (const achievement of ACHIEVEMENTS) {
+    // Determine which set of achievements to check based on role
+    const achievementSet = user.role === "doctor" ? DOCTOR_ACHIEVEMENTS : PATIENT_ACHIEVEMENTS;
+    
+    for (const achievement of achievementSet) {
       if (achievements.unlocked.includes(achievement.id)) continue;
 
       let unlocked = false;
