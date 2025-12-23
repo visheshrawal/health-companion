@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, ChevronRight, LogOut, RefreshCw, Check, X, ArrowRight, Flag, Filter } from "lucide-react";
+import { Calendar, Clock, User, ChevronRight, LogOut, RefreshCw, Check, X, ArrowRight, Flag, Filter, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate } from "react-router";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -110,14 +110,26 @@ export default function DoctorHome() {
       setAvailDays(user.doctorProfile.availability.days);
       setStartTime(user.doctorProfile.availability.startTime);
       setEndTime(user.doctorProfile.availability.endTime);
-    } else {
-      // Defaults
-      setAvailDays(["Mon", "Tue", "Wed", "Thu", "Fri"]);
     }
   }, [user]);
 
+  useEffect(() => {
+    if (appointments) {
+      setLocalAppointments(appointments);
+    }
+  }, [appointments]);
+
+  const toggleDay = (day: string) => {
+    if (availDays.includes(day)) {
+      setAvailDays(availDays.filter(d => d !== day));
+    } else {
+      setAvailDays([...availDays, day]);
+    }
+  };
+
   const handleSaveAvailability = async () => {
     if (!user?.doctorProfile) return;
+    
     try {
       await updateProfile({
         doctorProfile: {
@@ -129,29 +141,20 @@ export default function DoctorHome() {
           }
         }
       });
-      toast.success("Availability updated");
       setIsAvailabilityOpen(false);
+      toast.success("Availability updated successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to update availability");
     }
   };
 
-  const toggleDay = (day: string) => {
-    if (availDays.includes(day)) {
-      setAvailDays(availDays.filter(d => d !== day));
-    } else {
-      setAvailDays([...availDays, day]);
-    }
-  };
-
-  useEffect(() => {
-    if (appointments) {
-      setLocalAppointments(appointments);
-    }
-  }, [appointments]);
-
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -206,6 +209,10 @@ export default function DoctorHome() {
     }
   };
 
+  if (user === undefined || appointments === undefined) {
+    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+  }
+
   const today = new Date();
   const todaysAppointments = appointments?.filter(apt => 
     new Date(apt.date).toDateString() === today.toDateString()
@@ -214,7 +221,7 @@ export default function DoctorHome() {
   const rescheduleRequests = appointments?.filter(apt => apt.rescheduleRequest?.status === "pending") || [];
 
   // Filter Appointments for display
-  const filteredAppointments = localAppointments?.filter(apt => {
+  const filteredAppointments = (localAppointments || []).filter(apt => {
     if (showHighPriorityOnly) return apt.priority === "high";
     return true;
   });
