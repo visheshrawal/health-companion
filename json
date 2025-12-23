@@ -1,0 +1,6 @@
+{
+  "file_paths": [
+    "src/lib/vly-integrations.ts"
+  ],
+  "replace_files_in_context": false
+}

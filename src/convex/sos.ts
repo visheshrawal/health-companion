@@ -3,6 +3,7 @@ import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { VlyIntegrations } from "@vly-ai/integrations";
 
 export const trigger = action({
   args: {
@@ -27,18 +28,9 @@ export const trigger = action({
     const { name, email } = user.patientProfile.emergencyContact;
     
     // Initialize Vly Integration
-    // Using require to avoid ESM/CJS interop issues with the package in this environment
-    const VlyIntegration = require("@vly-ai/integrations");
-    const VlyClass = VlyIntegration.Vly || VlyIntegration.default?.Vly || VlyIntegration.default;
-    
-    if (!VlyClass) {
-        console.error("Vly Integration Exports:", Object.keys(VlyIntegration));
-        throw new Error("Failed to initialize Vly integration");
-    }
-
-    const vly = new VlyClass({
+    const vly = new VlyIntegrations({
       apiKey: process.env.VLY_INTEGRATION_KEY!,
-    });
+    } as any);
 
     const subject = `🆘 EMERGENCY: ${user.name} needs help`;
     const html = `
