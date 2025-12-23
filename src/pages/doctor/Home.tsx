@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -88,6 +90,7 @@ export default function DoctorHome() {
   const resolveRequest = useMutation(api.appointments.resolveRescheduleRequest);
   const updatePriority = useMutation(api.appointments.updatePriority);
   const updateOrder = useMutation(api.appointments.updateOrder);
+  const updateProfile = useMutation(api.users.updateProfile);
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
   
@@ -95,6 +98,51 @@ export default function DoctorHome() {
   const [suggestedDate, setSuggestedDate] = useState<string>("");
   const [showHighPriorityOnly, setShowHighPriorityOnly] = useState(false);
   const [localAppointments, setLocalAppointments] = useState<any[]>([]);
+  
+  // Availability State
+  const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
+  const [availDays, setAvailDays] = useState<string[]>([]);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("17:00");
+
+  useEffect(() => {
+    if (user?.doctorProfile?.availability) {
+      setAvailDays(user.doctorProfile.availability.days);
+      setStartTime(user.doctorProfile.availability.startTime);
+      setEndTime(user.doctorProfile.availability.endTime);
+    } else {
+      // Defaults
+      setAvailDays(["Mon", "Tue", "Wed", "Thu", "Fri"]);
+    }
+  }, [user]);
+
+  const handleSaveAvailability = async () => {
+    if (!user?.doctorProfile) return;
+    try {
+      await updateProfile({
+        doctorProfile: {
+          ...user.doctorProfile,
+          availability: {
+            days: availDays,
+            startTime,
+            endTime,
+          }
+        }
+      });
+      toast.success("Availability updated");
+      setIsAvailabilityOpen(false);
+    } catch (error) {
+      toast.error("Failed to update availability");
+    }
+  };
+
+  const toggleDay = (day: string) => {
+    if (availDays.includes(day)) {
+      setAvailDays(availDays.filter(d => d !== day));
+    } else {
+      setAvailDays([...availDays, day]);
+    }
+  };
 
   useEffect(() => {
     if (appointments) {
@@ -179,9 +227,66 @@ export default function DoctorHome() {
             <h1 className="text-3xl font-bold tracking-tight">Dr. {user?.name}</h1>
             <p className="text-muted-foreground">Welcome back to your dashboard.</p>
           </div>
-          <Button variant="outline" onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" /> Sign Out
-          </Button>
+          <div className="flex gap-2">
+            <Dialog open={isAvailabilityOpen} onOpenChange={setIsAvailabilityOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Clock className="mr-2 h-4 w-4" /> Availability
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Set Availability</DialogTitle>
+                  <DialogDescription>Configure your working days and hours.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Working Days</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                        <div key={day} className="flex items-center space-x-2">
+                          <Checkbox 
+                            id={`day-${day}`} 
+                            checked={availDays.includes(day)}
+                            onCheckedChange={() => toggleDay(day)}
+                          />
+                          <label htmlFor={`day-${day}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                            {day}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input 
+                        id="startTime" 
+                        type="time" 
+                        value={startTime} 
+                        onChange={(e) => setStartTime(e.target.value)} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input 
+                        id="endTime" 
+                        type="time" 
+                        value={endTime} 
+                        onChange={(e) => setEndTime(e.target.value)} 
+                      />
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleSaveAvailability}>Save Changes</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" /> Sign Out
+            </Button>
+          </div>
         </header>
 
         <div className="grid gap-4 md:grid-cols-3">

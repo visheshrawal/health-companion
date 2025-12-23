@@ -205,51 +205,73 @@ export const create = mutation({
 });
 
 export const getDoctorSlots = query({
-  args: { doctorId: v.id("users"), weekStart: v.number() },
+  args: { doctorId: v.id("users"), date: v.number() }, // date is timestamp of the day (midnight)
   handler: async (ctx, args) => {
-    // Get all appointments for this doctor in the given week
-    const weekEnd = args.weekStart + (7 * 24 * 60 * 60 * 1000);
+    const doctor = await ctx.db.get(args.doctorId);
+    if (!doctor || !doctor.doctorProfile) return [];
+
+    const availability = doctor.doctorProfile.availability || {
+      days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      startTime: "09:00",
+      endTime: "17:00"
+    };
+
+    const dayDate = new Date(args.date);
+    const dayName = dayDate.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"...
+
+    // Check if doctor works on this day
+    if (!availability.days.includes(dayName)) {
+      return [];
+    }
+
+    // Parse start and end times
+    const [startHour, startMin] = availability.startTime.split(':').map(Number);
+    const [endHour, endMin] = availability.endTime.split(':').map(Number);
+
+    const dayStart = new Date(dayDate);
+    dayStart.setHours(startHour, startMin, 0, 0);
     
+    const dayEnd = new Date(dayDate);
+    dayEnd.setHours(endHour, endMin, 0, 0);
+
+    // Get existing appointments for this doctor on this day
+    // We'll query a range covering the whole day to be safe
+    const queryStart = new Date(args.date);
+    queryStart.setHours(0,0,0,0);
+    const queryEnd = new Date(args.date);
+    queryEnd.setHours(23,59,59,999);
+
     const appointments = await ctx.db
       .query("appointments")
       .withIndex("by_doctor_and_date", (q) => 
-        q.eq("doctorId", args.doctorId).gte("date", args.weekStart).lt("date", weekEnd)
+        q.eq("doctorId", args.doctorId).gte("date", queryStart.getTime()).lt("date", queryEnd.getTime())
       )
       .collect();
 
-    // Generate slots (9 AM - 5 PM, Mon-Fri)
     const slots = [];
-    const start = new Date(args.weekStart);
-    
-    // Ensure we start at the beginning of the day if weekStart is mid-day
-    start.setHours(0, 0, 0, 0);
+    let currentSlot = new Date(dayStart);
 
-    for (let i = 0; i < 7; i++) { // 7 days
-      const currentDay = new Date(start.getTime() + (i * 24 * 60 * 60 * 1000));
+    while (currentSlot < dayEnd) {
+      const slotTimestamp = currentSlot.getTime();
       
-      // Skip weekends if needed (keeping it simple: all days)
-      
-      // 9 AM to 5 PM
-      for (let hour = 9; hour < 17; hour++) {
-        // 30 min slots
-        for (let min = 0; min < 60; min += 30) {
-          const slotTime = new Date(currentDay);
-          slotTime.setHours(hour, min, 0, 0);
-          const slotTimestamp = slotTime.getTime();
+      // Check if booked
+      const isBooked = appointments.some(apt => {
+        // Assuming 30 min slots for now, check if any appointment starts within this slot
+        // or if the slot is within an appointment (if we had duration)
+        // For MVP, simple collision check
+        return Math.abs(apt.date - slotTimestamp) < 1000; 
+      });
 
-          // Check if booked
-          const isBooked = appointments.some(apt => {
-            // Simple check: exact match or within 30 mins
-            // Assuming appointments are 30 mins
-            return Math.abs(apt.date - slotTimestamp) < 1000; // Tolerance
-          });
+      // Also check if slot is in the past
+      const isPast = slotTimestamp < Date.now();
 
-          slots.push({
-            date: slotTimestamp,
-            available: !isBooked,
-          });
-        }
-      }
+      slots.push({
+        date: slotTimestamp,
+        available: !isBooked && !isPast,
+      });
+
+      // Increment by 30 mins
+      currentSlot.setMinutes(currentSlot.getMinutes() + 30);
     }
 
     return slots;

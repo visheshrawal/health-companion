@@ -44,6 +44,11 @@ const schema = defineSchema(
         affiliation: v.optional(v.string()),
         bio: v.string(),
         isVerified: v.boolean(),
+        availability: v.optional(v.object({
+          days: v.array(v.string()), // e.g. ["Mon", "Tue", "Wed", "Thu", "Fri"]
+          startTime: v.string(), // e.g. "09:00"
+          endTime: v.string(), // e.g. "17:00"
+        })),
       })),
 
       // Legacy fields (keeping for backward compatibility if needed, but new flow uses objects)

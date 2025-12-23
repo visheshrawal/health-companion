@@ -67,6 +67,11 @@ export const updateProfile = mutation({
       affiliation: v.optional(v.string()),
       bio: v.string(),
       isVerified: v.boolean(),
+      availability: v.optional(v.object({
+        days: v.array(v.string()),
+        startTime: v.string(),
+        endTime: v.string(),
+      })),
     })),
   },
   handler: async (ctx, args) => {
@@ -90,6 +95,22 @@ export const updateProfile = mutation({
     if (args.doctorProfile) {
       patchData.specialization = args.doctorProfile.specialization;
       patchData.bio = args.doctorProfile.bio;
+      // We are using the object structure now, so the patchData spread above handles the nested update if we pass the whole object
+      // However, since we are patching the root user document, we need to ensure we don't overwrite the entire doctorProfile if we only want to update parts, 
+      // but the mutation args suggest we send the whole profile object or at least the parts we have.
+      // The current implementation in users.ts spreads args into patchData. 
+      // If args.doctorProfile is provided, it will replace the existing doctorProfile field in the document.
+      // This is fine as long as the frontend sends the complete object or we merge it here.
+      // For simplicity and since the frontend usually sends the whole form, we'll rely on the spread.
+      // But to be safe let's merge if it exists.
+      
+      const user = await ctx.db.get(userId);
+      if (user?.doctorProfile && args.doctorProfile) {
+         patchData.doctorProfile = {
+           ...user.doctorProfile,
+           ...args.doctorProfile,
+         };
+      }
     }
 
     await ctx.db.patch(userId, patchData);

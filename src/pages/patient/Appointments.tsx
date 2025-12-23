@@ -4,11 +4,12 @@ import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { format, addDays, startOfWeek, startOfDay } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
 
 export default function PatientAppointments() {
   const appointments = useQuery(api.appointments.listForPatient);
@@ -20,45 +21,57 @@ export default function PatientAppointments() {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<number | null>(null);
-  const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }).getTime());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
 
   // Fetch slots when rescheduling or booking
+  // For booking: we need selectedDoctor and selectedDate
   const slots = useQuery(api.appointments.getDoctorSlots, 
-    (isRescheduling && selectedApt) ? { doctorId: selectedApt.doctorId, weekStart } :
-    (isBooking && selectedDoctor) ? { doctorId: selectedDoctor._id, weekStart } :
-    "skip"
+    (isBooking && selectedDoctor && selectedDate) ? { 
+      doctorId: selectedDoctor._id, 
+      date: selectedDate.getTime() 
+    } : "skip"
+  );
+
+  // For rescheduling: we need selectedApt and selectedDate
+  const rescheduleSlots = useQuery(api.appointments.getDoctorSlots,
+    (isRescheduling && selectedApt && selectedDate) ? {
+      doctorId: selectedApt.doctorId,
+      date: selectedDate.getTime()
+    } : "skip"
   );
 
   const handleReschedule = async () => {
-    if (!selectedApt || !selectedDate) return;
+    if (!selectedApt || !selectedSlot) return;
     
     try {
       await requestReschedule({
         appointmentId: selectedApt._id,
-        newDate: selectedDate,
+        newDate: selectedSlot,
         reason: "Patient requested change",
       });
       toast.success("Reschedule request sent to doctor");
       setIsRescheduling(false);
-      setSelectedDate(null);
+      setSelectedDate(undefined);
+      setSelectedSlot(null);
     } catch (error) {
       toast.error("Failed to request reschedule");
     }
   };
 
   const handleBook = async () => {
-    if (!selectedDoctor || !selectedDate) return;
+    if (!selectedDoctor || !selectedSlot) return;
     try {
       await createAppointment({
         doctorId: selectedDoctor._id,
-        date: selectedDate,
+        date: selectedSlot,
         notes: "Booked via patient portal",
       });
       toast.success("Appointment booked successfully");
       setIsBooking(false);
       setSelectedDoctor(null);
-      setSelectedDate(null);
+      setSelectedDate(undefined);
+      setSelectedSlot(null);
     } catch (error) {
       toast.error("Failed to book appointment");
     }
@@ -79,23 +92,24 @@ export default function PatientAppointments() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" /> Upcoming Visits
+              <CalendarIcon className="h-5 w-5 text-primary" /> Upcoming Visits
             </h2>
             <Dialog open={isBooking} onOpenChange={(open) => {
               setIsBooking(open);
               if (!open) {
                 setSelectedDoctor(null);
-                setSelectedDate(null);
+                setSelectedDate(undefined);
+                setSelectedSlot(null);
               }
             }}>
               <DialogTrigger asChild>
                 <Button>Find a Doctor</Button>
               </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>{selectedDoctor ? `Book with Dr. ${selectedDoctor.name}` : "Find a Doctor"}</DialogTitle>
                   <DialogDescription>
-                    {selectedDoctor ? "Select a time slot for your appointment." : "Choose a doctor to view available times."}
+                    {selectedDoctor ? "Select a date and time for your appointment." : "Choose a doctor to view available times."}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -119,39 +133,57 @@ export default function PatientAppointments() {
                     {doctors?.length === 0 && <p className="text-center text-muted-foreground">No doctors found.</p>}
                   </div>
                 ) : (
-                  <div className="space-y-4 py-4">
-                    <Button variant="ghost" size="sm" onClick={() => { setSelectedDoctor(null); setSelectedDate(null); }} className="mb-2">
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Doctors
-                    </Button>
-                    
-                    <div className="flex justify-between items-center">
-                      <Button variant="ghost" onClick={() => setWeekStart(d => d - 7 * 24 * 60 * 60 * 1000)}>Previous Week</Button>
-                      <span className="font-medium">Week of {format(weekStart, "MMM d")}</span>
-                      <Button variant="ghost" onClick={() => setWeekStart(d => d + 7 * 24 * 60 * 60 * 1000)}>Next Week</Button>
+                  <div className="flex flex-col md:flex-row gap-6 py-4">
+                    <div className="flex-1">
+                      <Button variant="ghost" size="sm" onClick={() => { setSelectedDoctor(null); setSelectedDate(undefined); setSelectedSlot(null); }} className="mb-4">
+                        <ArrowLeft className="mr-2 h-4 w-4" /> Back to Doctors
+                      </Button>
+                      
+                      <div className="border rounded-lg p-4 flex justify-center">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                          className="rounded-md border shadow"
+                        />
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {slots ? slots.map((slot: any) => {
-                        const isSelected = slot.date === selectedDate;
-                        
-                        return (
-                          <Button
-                            key={slot.date}
-                            variant={isSelected ? "default" : "outline"}
-                            className={`
-                              h-auto py-3 flex flex-col gap-1
-                              ${!slot.available ? "opacity-50 cursor-not-allowed bg-red-50 dark:bg-red-900/10 border-red-200" : ""}
-                              ${slot.available ? "border-green-200 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20" : ""}
-                            `}
-                            disabled={!slot.available}
-                            onClick={() => setSelectedDate(slot.date)}
-                          >
-                            <span className="text-xs font-medium">{format(slot.date, "EEE, MMM d")}</span>
-                            <span className="text-sm font-bold">{format(slot.date, "h:mm a")}</span>
-                          </Button>
-                        );
-                      }) : (
-                        <div className="col-span-full text-center py-8">Loading slots...</div>
+                    <div className="flex-1 space-y-4">
+                      <h3 className="font-medium">Available Slots</h3>
+                      {!selectedDate ? (
+                        <div className="flex items-center justify-center h-40 border rounded-lg border-dashed text-muted-foreground">
+                          Select a date to view slots
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                          {slots ? (
+                            slots.length > 0 ? (
+                              slots.map((slot: any) => (
+                                <Button
+                                  key={slot.date}
+                                  variant={selectedSlot === slot.date ? "default" : "outline"}
+                                  className={`
+                                    w-full justify-start
+                                    ${!slot.available ? "opacity-50 cursor-not-allowed bg-muted" : ""}
+                                  `}
+                                  disabled={!slot.available}
+                                  onClick={() => setSelectedSlot(slot.date)}
+                                >
+                                  <Clock className="mr-2 h-4 w-4" />
+                                  {format(slot.date, "h:mm a")}
+                                </Button>
+                              ))
+                            ) : (
+                              <div className="col-span-2 text-center py-8 text-muted-foreground">
+                                No slots available on this date.
+                              </div>
+                            )
+                          ) : (
+                            <div className="col-span-2 text-center py-8">Loading slots...</div>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -160,7 +192,7 @@ export default function PatientAppointments() {
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsBooking(false)}>Cancel</Button>
                   {selectedDoctor && (
-                    <Button onClick={handleBook} disabled={!selectedDate}>
+                    <Button onClick={handleBook} disabled={!selectedSlot}>
                       Book Appointment
                     </Button>
                   )}
@@ -172,7 +204,7 @@ export default function PatientAppointments() {
           {upcomingAppointments.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
+                <CalendarIcon className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium">No upcoming appointments</p>
                 <p className="text-muted-foreground">Book a consultation with a doctor to get started.</p>
                 <Button className="mt-4" variant="outline" onClick={() => setIsBooking(true)}>Find a Doctor</Button>
@@ -195,7 +227,7 @@ export default function PatientAppointments() {
                   </CardHeader>
                   <CardContent className="pb-2 space-y-3">
                     <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                       <span>{format(apt.date, "EEEE, MMMM d, yyyy")}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
@@ -264,7 +296,8 @@ export default function PatientAppointments() {
                       if (open) setSelectedApt(apt);
                       else {
                         setSelectedApt(null);
-                        setSelectedDate(null);
+                        setSelectedDate(undefined);
+                        setSelectedSlot(null);
                       }
                     }}>
                       <DialogTrigger asChild>
@@ -272,53 +305,68 @@ export default function PatientAppointments() {
                           {apt.rescheduleRequest?.status === "pending" ? "Request Pending" : "Request Time Change"}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Reschedule Appointment</DialogTitle>
                           <DialogDescription>
-                            Select a new time slot for your appointment with Dr. {apt.doctor?.name}.
+                            Select a new date and time for your appointment with Dr. {apt.doctor?.name}.
                           </DialogDescription>
                         </DialogHeader>
                         
-                        <div className="space-y-4 py-4">
-                          <div className="flex justify-between items-center">
-                            <Button variant="ghost" onClick={() => setWeekStart(d => d - 7 * 24 * 60 * 60 * 1000)}>Previous Week</Button>
-                            <span className="font-medium">Week of {format(weekStart, "MMM d")}</span>
-                            <Button variant="ghost" onClick={() => setWeekStart(d => d + 7 * 24 * 60 * 60 * 1000)}>Next Week</Button>
+                        <div className="flex flex-col md:flex-row gap-6 py-4">
+                          <div className="flex-1">
+                            <div className="border rounded-lg p-4 flex justify-center">
+                              <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                                className="rounded-md border shadow"
+                              />
+                            </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                            {slots ? slots.map((slot: any) => {
-                              const isCurrent = slot.date === apt.date;
-                              const isSelected = slot.date === selectedDate;
-                              
-                              return (
-                                <Button
-                                  key={slot.date}
-                                  variant={isSelected ? "default" : "outline"}
-                                  className={`
-                                    h-auto py-3 flex flex-col gap-1
-                                    ${isCurrent ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100" : ""}
-                                    ${!slot.available && !isCurrent ? "opacity-50 cursor-not-allowed bg-red-50 dark:bg-red-900/10 border-red-200" : ""}
-                                    ${slot.available && !isCurrent ? "border-green-200 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20" : ""}
-                                  `}
-                                  disabled={!slot.available && !isCurrent}
-                                  onClick={() => setSelectedDate(slot.date)}
-                                >
-                                  <span className="text-xs font-medium">{format(slot.date, "EEE, MMM d")}</span>
-                                  <span className="text-sm font-bold">{format(slot.date, "h:mm a")}</span>
-                                  {isCurrent && <span className="text-[10px] text-blue-600 font-medium">Current</span>}
-                                </Button>
-                              );
-                            }) : (
-                              <div className="col-span-full text-center py-8">Loading slots...</div>
+                          <div className="flex-1 space-y-4">
+                            <h3 className="font-medium">Available Slots</h3>
+                            {!selectedDate ? (
+                              <div className="flex items-center justify-center h-40 border rounded-lg border-dashed text-muted-foreground">
+                                Select a date to view slots
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                                {rescheduleSlots ? (
+                                  rescheduleSlots.length > 0 ? (
+                                    rescheduleSlots.map((slot: any) => (
+                                      <Button
+                                        key={slot.date}
+                                        variant={selectedSlot === slot.date ? "default" : "outline"}
+                                        className={`
+                                          w-full justify-start
+                                          ${!slot.available ? "opacity-50 cursor-not-allowed bg-muted" : ""}
+                                        `}
+                                        disabled={!slot.available}
+                                        onClick={() => setSelectedSlot(slot.date)}
+                                      >
+                                        <Clock className="mr-2 h-4 w-4" />
+                                        {format(slot.date, "h:mm a")}
+                                      </Button>
+                                    ))
+                                  ) : (
+                                    <div className="col-span-2 text-center py-8 text-muted-foreground">
+                                      No slots available on this date.
+                                    </div>
+                                  )
+                                ) : (
+                                  <div className="col-span-2 text-center py-8">Loading slots...</div>
+                                )}
+                              </div>
                             )}
                           </div>
                         </div>
 
                         <DialogFooter>
                           <Button variant="outline" onClick={() => setIsRescheduling(false)}>Cancel</Button>
-                          <Button onClick={handleReschedule} disabled={!selectedDate || selectedDate === apt.date}>
+                          <Button onClick={handleReschedule} disabled={!selectedSlot}>
                             Send Change Request
                           </Button>
                         </DialogFooter>
