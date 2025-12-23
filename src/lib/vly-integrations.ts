@@ -1,9 +1,9 @@
-// VLY Integrations Configuration
-// See /integrations.md for usage documentation
+import { VlyIntegrations } from "@vly-ai/integrations";
 
-import { createVlyIntegrations } from '@vly-ai/integrations';
+if (!process.env.VLY_INTEGRATION_KEY) {
+  throw new Error("VLY_INTEGRATION_KEY is not set");
+}
 
-export const vly = createVlyIntegrations({
-  deploymentToken: process.env.VLY_INTEGRATION_KEY!,
-  debug: process.env.NODE_ENV === 'development'
-});
+export const vly = new VlyIntegrations({
+  token: process.env.VLY_INTEGRATION_KEY!,
+} as any);

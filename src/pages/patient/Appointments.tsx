@@ -33,7 +33,7 @@ export default function PatientAppointments() {
       doctorId: selectedDoctor._id, 
       date: selectedDate.getTime() 
     } : "skip"
-  );
+  ) || [];
 
   // For rescheduling: we need selectedApt and selectedDate
   const rescheduleSlots = useQuery(api.appointments.getDoctorSlots,
@@ -41,7 +41,7 @@ export default function PatientAppointments() {
       doctorId: selectedApt.doctorId,
       date: selectedDate.getTime()
     } : "skip"
-  );
+  ) || [];
 
   const handleReschedule = async () => {
     if (!selectedApt || !selectedSlot) return;
