@@ -1,4 +1,4 @@
-import { Home, Pill, Calendar, User, Stethoscope } from "lucide-react";
+import { Home, Pill, Calendar, User, Stethoscope, FileText } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
@@ -13,6 +13,7 @@ export function PatientNav() {
     { href: "/patient", icon: Home, label: "Home" },
     { href: "/patient/medications", icon: Pill, label: "Meds" },
     { href: "/patient/appointments", icon: Calendar, label: "Visits" },
+    { href: "/patient/history", icon: FileText, label: "History" },
     { href: "/profile", icon: User, label: "Profile" },
   ];
 
@@ -69,6 +70,10 @@ export function PatientLayout({ children }: { children: React.ReactNode }) {
             <Link to="/patient/appointments" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
               <Calendar className="h-5 w-5" />
               Appointments
+            </Link>
+            <Link to="/patient/history" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
+              <FileText className="h-5 w-5" />
+              History
             </Link>
             <Link to="/profile" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
               <User className="h-5 w-5" />

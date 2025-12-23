@@ -165,6 +165,21 @@ const schema = defineSchema(
       error: v.optional(v.string()),
       sentAt: v.number(),
     }).index("by_user", ["userId"]),
+
+    consultations: defineTable({
+      appointmentId: v.id("appointments"),
+      patientId: v.id("users"),
+      doctorId: v.id("users"),
+      recordingStorageId: v.optional(v.id("_storage")),
+      summary: v.optional(v.object({
+        diagnosis: v.string(),
+        treatmentPlan: v.string(),
+        advice: v.string(),
+        followUp: v.string(),
+      })),
+      transcript: v.optional(v.string()),
+      createdAt: v.number(),
+    }).index("by_patient", ["patientId"]).index("by_appointment", ["appointmentId"]),
   },
   {
     schemaValidation: false,

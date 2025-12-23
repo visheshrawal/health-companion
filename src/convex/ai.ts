@@ -1,8 +1,53 @@
 "use node";
 import { action } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 
 const GEMINI_API_KEY = "AIzaSyBTGQCS8i9yydgvBx6sS79DIYV4ygdVePc";
+
+const generateContentWithFallback = async (contents: any[]) => {
+  // Fallback strategy: gemini-2.5-flash -> gemini-1.5-flash
+  const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+  
+  for (const model of models) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ contents }),
+        }
+      );
+
+      if (!response.ok) {
+        // If 404 (model not found) or 429 (rate limit) or 5xx, try next
+        if (response.status === 404 || response.status === 429 || response.status >= 500) {
+            console.warn(`Model ${model} failed with status ${response.status}, trying next fallback...`);
+            continue;
+        }
+        const errorText = await response.text();
+        throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!textResponse) {
+         console.warn(`Model ${model} returned no content, trying next...`);
+         continue;
+      }
+
+      return textResponse;
+    } catch (error: any) {
+      console.error(`Error with model ${model}:`, error);
+      if (model === models[models.length - 1]) {
+        throw error; // Throw on last model failure
+      }
+    }
+  }
+  throw new Error("All AI models failed to generate content");
+};
 
 export const analyzeSymptoms = action({
   args: { symptoms: v.string() },
@@ -28,31 +73,7 @@ export const analyzeSymptoms = action({
     `;
 
     try {
-      // Using gemini-2.5-flash as requested
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!textResponse) {
-        throw new Error("No response content from AI");
-      }
+      const textResponse = await generateContentWithFallback([{ parts: [{ text: prompt }] }]);
 
       // Clean up potential markdown code blocks and extract JSON
       let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -116,6 +137,75 @@ export const generateAppointmentSummary = action({
       console.error("Error generating appointment summary:", error);
       // Propagate the actual error message for debugging
       throw new Error(`Summary generation failed: ${error.message || String(error)}`);
+    }
+  },
+});
+
+export const processConsultationRecording = action({
+  args: {
+    appointmentId: v.id("appointments"),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, args) => {
+    // 1. Get the file URL
+    const fileUrl = await ctx.runQuery(internal.consultations.getRecordingUrl, { 
+      storageId: args.storageId 
+    });
+
+    if (!fileUrl) throw new Error("Could not get file URL");
+
+    // 2. Fetch the audio file
+    const fileResponse = await fetch(fileUrl);
+    if (!fileResponse.ok) throw new Error("Failed to download audio file");
+    
+    const arrayBuffer = await fileResponse.arrayBuffer();
+    const base64Audio = Buffer.from(arrayBuffer).toString("base64");
+
+    // 3. Get appointment details to know who the patient/doctor are
+    const appointment = await ctx.runQuery(internal.appointments.getInternal, { id: args.appointmentId });
+    if (!appointment) throw new Error("Appointment not found");
+
+    const prompt = `
+      You are a medical scribe. Summarize this doctor-patient consultation audio.
+      
+      Extract the following sections:
+      1. Diagnosis or assessment
+      2. Treatment plan & prescribed medications
+      3. Doctor's advice & recommendations
+      4. Next steps/follow-up
+
+      Provide the output in strict JSON format with the following structure:
+      {
+        "diagnosis": "...",
+        "treatmentPlan": "...",
+        "advice": "...",
+        "followUp": "..."
+      }
+      
+      Do not include markdown formatting (like \`\`\`json), just the raw JSON string.
+    `;
+
+    try {
+      const aiResponse = await generateContentWithFallback(
+        [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: "audio/mp3", // Assuming MP3 or compatible audio
+              data: base64Audio
+            }
+          }
+        ]
+      );
+
+      let jsonString = aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      const result = JSON.parse(jsonString);
+      return result;
+    } catch (error: any) {
+      console.error("Error processing consultation recording:", error);
+      // Propagate the actual error message for debugging
+      throw new Error(`Processing failed: ${error.message || String(error)}`);
     }
   },
 });

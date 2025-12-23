@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, internalQuery } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const get = query({
@@ -275,5 +275,12 @@ export const getDoctorSlots = query({
     }
 
     return slots;
+  },
+});
+
+export const getInternal = internalQuery({
+  args: { id: v.id("appointments") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
   },
 });

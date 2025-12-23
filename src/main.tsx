@@ -20,6 +20,7 @@ const PatientMedications = lazy(() => import("./pages/patient/Medications.tsx"))
 const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
 const DoctorHome = lazy(() => import("./pages/doctor/Home.tsx"));
 const AppointmentDetail = lazy(() => import("./pages/doctor/AppointmentDetail.tsx"));
+import ConsultationHistory from "./pages/patient/ConsultationHistory";
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -76,6 +77,7 @@ createRoot(document.getElementById("root")!).render(
               <Route path="/patient" element={<PatientHome />} />
               <Route path="/patient/medications" element={<PatientMedications />} />
               <Route path="/patient/appointments" element={<PatientAppointments />} />
+              <Route path="/patient/history" element={<ConsultationHistory />} />
               
               {/* Doctor Routes */}
               <Route path="/doctor" element={<DoctorHome />} />
