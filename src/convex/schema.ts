@@ -92,6 +92,7 @@ const schema = defineSchema(
       date: v.number(), // timestamp
       status: v.union(v.literal("scheduled"), v.literal("completed"), v.literal("cancelled")),
       notes: v.optional(v.string()),
+      priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
       rescheduleRequest: v.optional(v.object({
         newDate: v.number(),
         status: v.union(v.literal("pending"), v.literal("rejected"), v.literal("suggested")),

@@ -127,6 +127,23 @@ export const resolveRescheduleRequest = mutation({
   },
 });
 
+export const updatePriority = mutation({
+  args: {
+    appointmentId: v.id("appointments"),
+    priority: v.union(v.literal("high"), v.literal("medium"), v.literal("low")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const appointment = await ctx.db.get(args.appointmentId);
+    if (!appointment) throw new Error("Appointment not found");
+    if (appointment.doctorId !== userId) throw new Error("Unauthorized");
+
+    await ctx.db.patch(args.appointmentId, { priority: args.priority });
+  },
+});
+
 export const getDoctorSlots = query({
   args: { doctorId: v.id("users"), weekStart: v.number() },
   handler: async (ctx, args) => {
