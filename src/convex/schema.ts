@@ -61,11 +61,27 @@ const schema = defineSchema(
     medications: defineTable({
       userId: v.id("users"),
       name: v.string(),
-      dosage: v.string(),
-      frequency: v.string(),
+      dosage: v.optional(v.string()), // Kept for backward compatibility
+      frequency: v.optional(v.string()), // Kept for backward compatibility
       startDate: v.number(),
       endDate: v.optional(v.number()),
-      takenLog: v.array(v.string()), // Array of YYYY-MM-DD strings
+      // New fields for detailed tracking
+      duration: v.optional(v.number()), // days
+      schedule: v.optional(v.array(v.object({
+        time: v.string(), // "morning", "afternoon", "night"
+        withFood: v.string(),
+        quantity: v.number(),
+      }))),
+      instructions: v.optional(v.string()),
+      // Updated log structure
+      takenLog: v.array(v.union(
+        v.string(), // Legacy: YYYY-MM-DD
+        v.object({
+          date: v.string(), // YYYY-MM-DD
+          time: v.string(), // "morning", "afternoon", "night"
+          status: v.string(), // "taken", "missed", "skipped"
+        })
+      )),
       prescriptionId: v.optional(v.id("prescriptions")),
       active: v.boolean(),
     }).index("by_user", ["userId"]),
@@ -88,8 +104,13 @@ const schema = defineSchema(
       notes: v.optional(v.string()),
       medications: v.array(v.object({
         name: v.string(),
-        dosage: v.string(),
-        frequency: v.string(),
+        duration: v.number(),
+        schedule: v.array(v.object({
+          time: v.string(),
+          withFood: v.string(),
+          quantity: v.number(),
+        })),
+        instructions: v.optional(v.string()),
       })),
     }).index("by_patient", ["patientId"]),
 

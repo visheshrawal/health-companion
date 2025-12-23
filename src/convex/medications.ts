@@ -28,39 +28,10 @@ export const list = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return [];
-
     return await ctx.db
       .query("medications")
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
-  },
-});
-
-export const toggleTaken = mutation({
-  args: {
-    medicationId: v.id("medications"),
-    date: v.string(), // YYYY-MM-DD
-    taken: v.boolean(),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) throw new Error("Unauthorized");
-
-    const med = await ctx.db.get(args.medicationId);
-    if (!med || med.userId !== userId) throw new Error("Medication not found");
-
-    let newLog = [...med.takenLog];
-    if (args.taken) {
-      if (!newLog.includes(args.date)) {
-        newLog.push(args.date);
-      }
-    } else {
-      newLog = newLog.filter((d) => d !== args.date);
-    }
-
-    await ctx.db.patch(args.medicationId, {
-      takenLog: newLog,
-    });
   },
 });
 
@@ -69,47 +40,117 @@ export const getStreak = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) return 0;
-
+    
+    // Simple streak calculation: consecutive days with at least one taken med
+    // This is a simplified version. Real streak logic can be complex.
     const meds = await ctx.db
       .query("medications")
       .withIndex("by_user", (q) => q.eq("userId", userId))
-      .filter((q) => q.eq(q.field("active"), true))
       .collect();
 
     if (meds.length === 0) return 0;
 
-    // Simple streak calculation: check consecutive days backwards from today
-    // This is a simplified version. A real one would be more complex.
-    // We assume "streak" means all active meds were taken for that day.
-    
-    let streak = 0;
-    const today = new Date();
-    
-    // Check up to 365 days back
-    for (let i = 0; i < 365; i++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      
-      // Check if all active meds were taken on this date
-      // Note: This logic assumes meds were active on that date. 
-      // For MVP, we just check if the current active meds have this date in their log.
-      const allTaken = meds.every(med => med.takenLog.includes(dateStr));
-      
-      if (allTaken) {
-        streak++;
-      } else {
-        // If today is not taken yet, don't break streak if it's today (user might take it later)
-        // But if it's yesterday and not taken, streak is broken.
-        if (i === 0) {
-           // If today is not fully taken, we don't count it, but we don't break if we are just checking history.
-           // However, for "current streak", usually we count completed days.
-           continue; 
+    // Collect all unique dates where meds were taken
+    const takenDates = new Set<string>();
+    meds.forEach(med => {
+      med.takenLog.forEach(log => {
+        if (typeof log === 'string') {
+          takenDates.add(log);
+        } else if (log.status === 'taken') {
+          takenDates.add(log.date);
         }
-        break;
+      });
+    });
+
+    const sortedDates = Array.from(takenDates).sort().reverse();
+    if (sortedDates.length === 0) return 0;
+
+    let streak = 0;
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    
+    // Check if streak is active (taken today or yesterday)
+    if (sortedDates[0] !== today && sortedDates[0] !== yesterday) {
+      return 0;
+    }
+
+    let currentDate = new Date(sortedDates[0]);
+    
+    for (let i = 0; i < sortedDates.length; i++) {
+      const dateStr = sortedDates[i];
+      // Check if this date is consecutive
+      // Simplified: just counting the sorted dates assuming no gaps in the set means consecutive? 
+      // No, we need to check date diff.
+      
+      // Actually, let's just count backwards from today/yesterday
+      // This is MVP logic
+      streak++;
+      
+      if (i < sortedDates.length - 1) {
+        const prevDate = new Date(sortedDates[i+1]);
+        const diffTime = Math.abs(currentDate.getTime() - prevDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        
+        if (diffDays > 1) break;
+        currentDate = prevDate;
       }
     }
     
     return streak;
+  },
+});
+
+export const toggleTaken = mutation({
+  args: {
+    medicationId: v.id("medications"),
+    date: v.string(),
+    time: v.optional(v.string()), // "morning", "afternoon", "night"
+    status: v.optional(v.string()), // "taken", "missed"
+    taken: v.optional(v.boolean()), // Legacy support
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    const med = await ctx.db.get(args.medicationId);
+    if (!med || med.userId !== userId) throw new Error("Unauthorized");
+
+    let newLog = [...med.takenLog];
+
+    if (args.time) {
+      // New detailed tracking
+      const existingIndex = newLog.findIndex(entry => 
+        typeof entry !== 'string' && entry.date === args.date && entry.time === args.time
+      );
+
+      if (existingIndex >= 0) {
+        // Update or remove
+        if (args.status) {
+          (newLog[existingIndex] as any).status = args.status;
+        } else {
+          // Toggle off if no status provided (legacy behaviorish)
+          newLog.splice(existingIndex, 1);
+        }
+      } else {
+        // Add
+        if (args.status) {
+          newLog.push({
+            date: args.date,
+            time: args.time,
+            status: args.status,
+          });
+        }
+      }
+    } else {
+      // Legacy simple toggle (date only)
+      const isTaken = newLog.some(l => typeof l === 'string' && l === args.date);
+      if (args.taken && !isTaken) {
+        newLog.push(args.date);
+      } else if (!args.taken && isTaken) {
+        newLog = newLog.filter(l => typeof l !== 'string' || l !== args.date);
+      }
+    }
+
+    await ctx.db.patch(args.medicationId, { takenLog: newLog });
   },
 });

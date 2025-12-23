@@ -6,53 +6,53 @@ export const create = mutation({
   args: {
     patientId: v.id("users"),
     appointmentId: v.id("appointments"),
-    notes: v.optional(v.string()),
     medications: v.array(v.object({
       name: v.string(),
-      dosage: v.string(),
-      frequency: v.string(),
-      startDate: v.number(),
-      endDate: v.optional(v.number()),
+      duration: v.number(),
+      schedule: v.array(v.object({
+        time: v.string(),
+        withFood: v.string(),
+        quantity: v.number(),
+      })),
+      instructions: v.optional(v.string()),
     })),
+    notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const doctorId = await getAuthUserId(ctx);
     if (!doctorId) throw new Error("Unauthorized");
 
-    // Verify doctor owns the appointment
-    const apt = await ctx.db.get(args.appointmentId);
-    if (!apt || apt.doctorId !== doctorId) throw new Error("Unauthorized");
-
-    // Create prescription
+    // Create the prescription record
     const prescriptionId = await ctx.db.insert("prescriptions", {
       doctorId,
       patientId: args.patientId,
       appointmentId: args.appointmentId,
+      medications: args.medications,
       notes: args.notes,
-      medications: args.medications.map(m => ({
-        name: m.name,
-        dosage: m.dosage,
-        frequency: m.frequency,
-      })),
     });
 
-    // Automatically add medications to patient's list
+    // Create individual medication records for the patient
+    const startDate = Date.now();
+    
     for (const med of args.medications) {
+      const endDate = startDate + (med.duration * 24 * 60 * 60 * 1000);
+      
       await ctx.db.insert("medications", {
         userId: args.patientId,
         name: med.name,
-        dosage: med.dosage,
-        frequency: med.frequency,
-        startDate: med.startDate,
-        endDate: med.endDate,
+        startDate,
+        endDate,
+        duration: med.duration,
+        schedule: med.schedule,
+        instructions: med.instructions,
         takenLog: [],
         prescriptionId,
         active: true,
       });
     }
-    
-    // Mark appointment as completed
-    await ctx.db.patch(args.appointmentId, { status: "completed" });
+
+    // Update appointment status to completed? Optional, but good practice if prescribing
+    // await ctx.db.patch(args.appointmentId, { status: "completed" });
     
     return prescriptionId;
   },

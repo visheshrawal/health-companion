@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut } from "lucide-react";
+import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut, Sun, Moon, Sunset } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -25,13 +25,30 @@ export default function PatientHome() {
     navigate("/auth");
   };
 
-  const handleTakeMed = async (medId: any, taken: boolean) => {
-    await toggleTaken({ medicationId: medId, date: today, taken });
-    toast.success(taken ? "Medication taken!" : "Medication untaken");
+  const handleTakeMed = async (medId: any, time: string, status: string) => {
+    await toggleTaken({ medicationId: medId, date: today, time, status });
+    toast.success(status === "taken" ? "Medication taken!" : "Medication untaken");
   };
 
   const activeMeds = medications?.filter(m => m.active) || [];
   const upcomingAppointments = appointments?.filter(a => a.status === "scheduled" && a.date > Date.now()) || [];
+
+  // Flatten schedule for today's view
+  const todaysMeds = activeMeds.flatMap(med => {
+    if (!med.schedule) return [];
+    return med.schedule.map((s: any) => ({
+      ...med,
+      scheduleTime: s.time,
+      scheduleDetails: s,
+      isTaken: med.takenLog.some((log: any) => 
+        typeof log !== 'string' && log.date === today && log.time === s.time && log.status === 'taken'
+      )
+    }));
+  });
+
+  // Sort by time (morning, afternoon, night)
+  const timeOrder: Record<string, number> = { morning: 1, afternoon: 2, night: 3 };
+  todaysMeds.sort((a, b) => (timeOrder[a.scheduleTime] || 4) - (timeOrder[b.scheduleTime] || 4));
 
   return (
     <PatientLayout>
@@ -95,28 +112,32 @@ export default function PatientHome() {
               <CardTitle>Today's Medications</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {activeMeds.length === 0 ? (
+              {todaysMeds.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">No active medications.</p>
               ) : (
-                activeMeds.map((med) => {
-                  const isTaken = med.takenLog.includes(today);
-                  return (
-                    <div key={med._id} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                todaysMeds.map((med, idx) => (
+                  <div key={`${med._id}-${med.scheduleTime}-${idx}`} className="flex items-center justify-between p-3 rounded-lg border bg-card/50">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-secondary">
+                        {med.scheduleTime === 'morning' && <Sun className="h-4 w-4 text-orange-500" />}
+                        {med.scheduleTime === 'afternoon' && <Sunset className="h-4 w-4 text-orange-400" />}
+                        {med.scheduleTime === 'night' && <Moon className="h-4 w-4 text-blue-500" />}
+                      </div>
                       <div>
                         <p className="font-medium">{med.name}</p>
-                        <p className="text-sm text-muted-foreground">{med.dosage} • {med.frequency}</p>
+                        <p className="text-sm text-muted-foreground capitalize">{med.scheduleTime} • {med.scheduleDetails.withFood}</p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant={isTaken ? "default" : "outline"}
-                        className={isTaken ? "bg-green-500 hover:bg-green-600" : ""}
-                        onClick={() => handleTakeMed(med._id, !isTaken)}
-                      >
-                        {isTaken ? <Check className="h-4 w-4" /> : "Take"}
-                      </Button>
                     </div>
-                  );
-                })
+                    <Button
+                      size="sm"
+                      variant={med.isTaken ? "default" : "outline"}
+                      className={med.isTaken ? "bg-green-500 hover:bg-green-600" : ""}
+                      onClick={() => handleTakeMed(med._id, med.scheduleTime, med.isTaken ? "missed" : "taken")}
+                    >
+                      {med.isTaken ? <Check className="h-4 w-4" /> : "Take"}
+                    </Button>
+                  </div>
+                ))
               )}
             </CardContent>
           </Card>
