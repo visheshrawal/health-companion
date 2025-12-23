@@ -315,9 +315,18 @@ export default function Profile() {
               license={license} setLicense={setLicense}
               affiliation={affiliation} setAffiliation={setAffiliation}
               bio={bio} setBio={setBio}
+              fileInputRef={fileInputRef}
+              onFileSelect={onFileSelect}
             />
           </TabsContent>
         </Tabs>
+        
+        <ImageCropper
+          open={cropModalOpen}
+          onOpenChange={setCropModalOpen}
+          imageSrc={selectedImageSrc}
+          onCropComplete={handleCroppedImageUpload}
+        />
       </div>
     );
 
@@ -354,6 +363,14 @@ export default function Profile() {
         license={license} setLicense={setLicense}
         affiliation={affiliation} setAffiliation={setAffiliation}
         bio={bio} setBio={setBio}
+        fileInputRef={fileInputRef}
+        onFileSelect={onFileSelect}
+      />
+      <ImageCropper
+        open={cropModalOpen}
+        onOpenChange={setCropModalOpen}
+        imageSrc={selectedImageSrc}
+        onCropComplete={handleCroppedImageUpload}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, Stethoscope, LogOut, CheckCircle2 } from "lucide-react";
+import { Loader2, User, Stethoscope, LogOut, CheckCircle2, Camera } from "lucide-react";
 
 interface ProfileEditProps {
   user: any;
@@ -32,6 +32,9 @@ interface ProfileEditProps {
   license: string; setLicense: (v: string) => void;
   affiliation: string; setAffiliation: (v: string) => void;
   bio: string; setBio: (v: string) => void;
+  // Image Upload
+  fileInputRef?: any;
+  onFileSelect?: any;
 }
 
 export function ProfileEdit({
@@ -39,7 +42,8 @@ export function ProfileEdit({
   handleStep1Submit, handleStep2Submit, handleSignOut,
   dob, setDob, sex, setSex, bloodGroup, setBloodGroup, conditions, setConditions,
   allergies, setAllergies, emergencyName, setEmergencyName, emergencyPhone, setEmergencyPhone, emergencyEmail, setEmergencyEmail,
-  specialization, setSpecialization, license, setLicense, affiliation, setAffiliation, bio, setBio
+  specialization, setSpecialization, license, setLicense, affiliation, setAffiliation, bio, setBio,
+  fileInputRef, onFileSelect
 }: ProfileEditProps) {
   
   return (
@@ -69,6 +73,33 @@ export function ProfileEdit({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {(step === 2 || user.profileCompleted) && fileInputRef && (
+            <div className="flex justify-center mb-6">
+              <div className="relative group">
+                <div className="h-24 w-24 rounded-full border-4 border-background bg-muted flex items-center justify-center overflow-hidden shadow-xl">
+                  {user.imageUrl ? (
+                    <img src={user.imageUrl} alt={user.name} className="h-full w-full object-cover" />
+                  ) : (
+                    <User className="h-12 w-12 text-muted-foreground" />
+                  )}
+                </div>
+                <div 
+                  className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={() => fileInputRef?.current?.click()}
+                >
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*" 
+                  onChange={onFileSelect} 
+                />
+              </div>
+            </div>
+          )}
+
           {step === 1 ? (
             <form onSubmit={handleStep1Submit} className="space-y-6 animate-in fade-in slide-in-from-right-4">
               <div className="space-y-2">

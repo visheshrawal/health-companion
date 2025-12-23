@@ -32,8 +32,12 @@ function SortableAppointmentItem({ apt, handlePriorityChange }: { apt: any, hand
       ${apt.priority === 'high' ? 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-900' : 'bg-card/50 hover:bg-accent/50'}
     `}>
       <Link to={`/doctor/appointments/${apt._id}`} className="flex-1 flex items-center gap-4 cursor-pointer w-full">
-        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
-          {apt.patient?.name?.[0]}
+        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0 overflow-hidden">
+          {apt.patient?.imageUrl ? (
+            <img src={apt.patient.imageUrl} alt={apt.patient?.name} className="h-full w-full object-cover" />
+          ) : (
+            apt.patient?.name?.[0]
+          )}
         </div>
         <div>
           <div className="flex items-center gap-2">
@@ -342,8 +346,12 @@ export default function DoctorHome() {
               {rescheduleRequests.map(apt => (
                 <div key={apt._id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-lg border bg-card/50 gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 font-bold">
-                      {apt.patient?.name?.[0]}
+                    <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 font-bold overflow-hidden">
+                      {apt.patient?.imageUrl ? (
+                        <img src={apt.patient.imageUrl} alt={apt.patient?.name} className="h-full w-full object-cover" />
+                      ) : (
+                        apt.patient?.name?.[0]
+                      )}
                     </div>
                     <div>
                       <h3 className="font-semibold">{apt.patient?.name}</h3>

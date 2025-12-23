@@ -33,7 +33,11 @@ export const listForPatient = query({
     const appointmentsWithDetails = await Promise.all(
       appointments.map(async (apt) => {
         const doctor = await ctx.db.get(apt.doctorId);
-        return { ...apt, doctor };
+        let imageUrl = null;
+        if (doctor?.image) {
+          imageUrl = await ctx.storage.getUrl(doctor.image);
+        }
+        return { ...apt, doctor: doctor ? { ...doctor, imageUrl } : null };
       })
     );
 
@@ -61,7 +65,11 @@ export const listForDoctor = query({
     const appointmentsWithDetails = await Promise.all(
       appointments.map(async (apt) => {
         const patient = await ctx.db.get(apt.patientId);
-        return { ...apt, patient };
+        let imageUrl = null;
+        if (patient?.image) {
+          imageUrl = await ctx.storage.getUrl(patient.image);
+        }
+        return { ...apt, patient: patient ? { ...patient, imageUrl } : null };
       })
     );
 

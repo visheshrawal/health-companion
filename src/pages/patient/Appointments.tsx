@@ -140,9 +140,18 @@ export default function PatientAppointments() {
                 <Card key={apt._id} className="glass border-l-4 border-l-primary">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>Dr. {apt.doctor?.name}</CardTitle>
-                        <CardDescription>{apt.doctor?.doctorProfile?.specialization || "General Practice"}</CardDescription>
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden shrink-0">
+                          {apt.doctor?.imageUrl ? (
+                            <img src={apt.doctor.imageUrl} alt={apt.doctor.name} className="h-full w-full object-cover" />
+                          ) : (
+                            apt.doctor?.name?.[0]
+                          )}
+                        </div>
+                        <div>
+                          <CardTitle>Dr. {apt.doctor?.name}</CardTitle>
+                          <CardDescription>{apt.doctor?.doctorProfile?.specialization || "General Practice"}</CardDescription>
+                        </div>
                       </div>
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
                         {format(apt.date, "d")}
