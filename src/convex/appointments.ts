@@ -37,7 +37,13 @@ export const listForPatient = query({
       })
     );
 
-    return appointmentsWithDetails.sort((a, b) => a.date - b.date);
+    return appointmentsWithDetails.sort((a, b) => {
+      // Sort by order if available, otherwise by date
+      if (a.order !== undefined && b.order !== undefined) {
+        return a.order - b.order;
+      }
+      return a.date - b.date;
+    });
   },
 });
 
@@ -141,6 +147,37 @@ export const updatePriority = mutation({
     if (appointment.doctorId !== userId) throw new Error("Unauthorized");
 
     await ctx.db.patch(args.appointmentId, { priority: args.priority });
+
+    // Notify patient
+    await ctx.db.insert("notifications", {
+      userId: appointment.patientId,
+      title: "Appointment Update",
+      message: `Your appointment on ${new Date(appointment.date).toLocaleDateString()} has been marked as ${args.priority} priority.`,
+      type: "info",
+      read: false,
+      createdAt: Date.now(),
+      link: "/patient/appointments",
+    });
+  },
+});
+
+export const updateOrder = mutation({
+  args: {
+    updates: v.array(v.object({
+      id: v.id("appointments"),
+      order: v.number(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    for (const update of args.updates) {
+      const apt = await ctx.db.get(update.id);
+      if (apt && apt.doctorId === userId) {
+        await ctx.db.patch(update.id, { order: update.order });
+      }
+    }
   },
 });
 

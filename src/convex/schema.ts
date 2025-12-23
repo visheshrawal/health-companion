@@ -93,6 +93,7 @@ const schema = defineSchema(
       status: v.union(v.literal("scheduled"), v.literal("completed"), v.literal("cancelled")),
       notes: v.optional(v.string()),
       priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
+      order: v.optional(v.number()),
       rescheduleRequest: v.optional(v.object({
         newDate: v.number(),
         status: v.union(v.literal("pending"), v.literal("rejected"), v.literal("suggested")),
@@ -128,6 +129,16 @@ const schema = defineSchema(
       format: v.string(),
       uploadedAt: v.number(),
     }).index("by_user", ["userId"]),
+
+    notifications: defineTable({
+      userId: v.id("users"),
+      title: v.string(),
+      message: v.string(),
+      type: v.union(v.literal("info"), v.literal("warning"), v.literal("success"), v.literal("error")),
+      read: v.boolean(),
+      link: v.optional(v.string()),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"]).index("by_user_and_read", ["userId", "read"]),
   },
   {
     schemaValidation: false,

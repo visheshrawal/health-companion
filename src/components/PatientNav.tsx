@@ -1,6 +1,7 @@
 import { Home, Pill, Calendar, User } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
+import { NotificationsPopover } from "@/components/NotificationsPopover";
 
 export function PatientNav() {
   const location = useLocation();

@@ -11,19 +11,124 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Sortable Item Component
+function SortableAppointmentItem({ apt, handlePriorityChange }: { apt: any, handlePriorityChange: any }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: apt._id });
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-lg border transition-colors mb-3 touch-none
+      ${apt.priority === 'high' ? 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-900' : 'bg-card/50 hover:bg-accent/50'}
+    `}>
+      <Link to={`/doctor/appointments/${apt._id}`} className="flex-1 flex items-center gap-4 cursor-pointer w-full">
+        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
+          {apt.patient?.name?.[0]}
+        </div>
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold">{apt.patient?.name}</h3>
+            {apt.priority === 'high' && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">High Priority</span>}
+          </div>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {format(apt.date, "MMM d, yyyy")}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {format(apt.date, "h:mm a")}
+            </span>
+          </div>
+        </div>
+      </Link>
+      
+      <div className="flex items-center gap-4 mt-4 md:mt-0 w-full md:w-auto justify-between md:justify-end">
+        <div className="flex items-center gap-2" onPointerDown={(e) => e.stopPropagation()}>
+          <Select 
+            defaultValue={apt.priority || "low"} 
+            onValueChange={(val: any) => handlePriorityChange(apt._id, val)}
+          >
+            <SelectTrigger className="w-[110px] h-8 text-xs">
+              <SelectValue placeholder="Priority" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="high">🔴 High</SelectItem>
+              <SelectItem value="medium">🟡 Medium</SelectItem>
+              <SelectItem value="low">🟢 Low</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize
+          ${apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
+            apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
+            'bg-gray-100 text-gray-700'}`}>
+          {apt.status}
+        </div>
+        <Link to={`/doctor/appointments/${apt._id}`}>
+          <ChevronRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+      </div>
+    </div>
+  );
+}
 
 export default function DoctorHome() {
   const user = useQuery(api.users.currentUser);
   const appointments = useQuery(api.appointments.listForDoctor);
   const resolveRequest = useMutation(api.appointments.resolveRescheduleRequest);
   const updatePriority = useMutation(api.appointments.updatePriority);
+  const updateOrder = useMutation(api.appointments.updateOrder);
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
   
   const [suggestingId, setSuggestingId] = useState<string | null>(null);
   const [suggestedDate, setSuggestedDate] = useState<string>("");
   const [showHighPriorityOnly, setShowHighPriorityOnly] = useState(false);
+  const [localAppointments, setLocalAppointments] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (appointments) {
+      setLocalAppointments(appointments);
+    }
+  }, [appointments]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setLocalAppointments((items) => {
+        const oldIndex = items.findIndex((item) => item._id === active.id);
+        const newIndex = items.findIndex((item) => item._id === over.id);
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Update order in backend
+        const updates = newItems.map((item: any, index: number) => ({
+          id: item._id,
+          order: index,
+        }));
+        updateOrder({ updates });
+        
+        return newItems;
+      });
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -60,20 +165,10 @@ export default function DoctorHome() {
 
   const rescheduleRequests = appointments?.filter(apt => apt.rescheduleRequest?.status === "pending") || [];
 
-  // Filter and Sort Appointments
-  const filteredAppointments = appointments?.filter(apt => {
+  // Filter Appointments for display
+  const filteredAppointments = localAppointments?.filter(apt => {
     if (showHighPriorityOnly) return apt.priority === "high";
     return true;
-  }).sort((a, b) => {
-    // Sort by priority first (High > Medium > Low > undefined)
-    const priorityOrder = { high: 3, medium: 2, low: 1, undefined: 0 };
-    const pA = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
-    const pB = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-    
-    if (pA !== pB) return pB - pA; // Descending priority
-    
-    // Then by date
-    return a.date - b.date;
   });
 
   return (
@@ -215,61 +310,25 @@ export default function DoctorHome() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredAppointments?.map((apt) => (
-                <div key={apt._id} className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-lg border transition-colors mb-3
-                  ${apt.priority === 'high' ? 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-900' : 'bg-card/50 hover:bg-accent/50'}
-                `}>
-                  <Link to={`/doctor/appointments/${apt._id}`} className="flex-1 flex items-center gap-4 cursor-pointer w-full">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold shrink-0">
-                      {apt.patient?.name?.[0]}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{apt.patient?.name}</h3>
-                        {apt.priority === 'high' && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold uppercase">High Priority</span>}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {format(apt.date, "MMM d, yyyy")}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {format(apt.date, "h:mm a")}
-                        </span>
-                      </div>
-                    </div>
-                  </Link>
-                  
-                  <div className="flex items-center gap-4 mt-4 md:mt-0 w-full md:w-auto justify-between md:justify-end">
-                    <div className="flex items-center gap-2">
-                      <Select 
-                        defaultValue={apt.priority || "low"} 
-                        onValueChange={(val: any) => handlePriorityChange(apt._id, val)}
-                      >
-                        <SelectTrigger className="w-[110px] h-8 text-xs">
-                          <SelectValue placeholder="Priority" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="high">🔴 High</SelectItem>
-                          <SelectItem value="medium">🟡 Medium</SelectItem>
-                          <SelectItem value="low">🟢 Low</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className={`px-3 py-1 rounded-full text-xs font-medium capitalize
-                      ${apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 
-                        apt.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 
-                        'bg-gray-100 text-gray-700'}`}>
-                      {apt.status}
-                    </div>
-                    <Link to={`/doctor/appointments/${apt._id}`}>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                    </Link>
-                  </div>
-                </div>
-              ))}
+              <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext 
+                  items={filteredAppointments.map(a => a._id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {filteredAppointments?.map((apt) => (
+                    <SortableAppointmentItem 
+                      key={apt._id} 
+                      apt={apt} 
+                      handlePriorityChange={handlePriorityChange} 
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              
               {filteredAppointments?.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground">
                   {showHighPriorityOnly ? "No high priority appointments found." : "No appointments found."}
