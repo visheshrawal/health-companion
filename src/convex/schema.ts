@@ -92,6 +92,12 @@ const schema = defineSchema(
       date: v.number(), // timestamp
       status: v.union(v.literal("scheduled"), v.literal("completed"), v.literal("cancelled")),
       notes: v.optional(v.string()),
+      rescheduleRequest: v.optional(v.object({
+        newDate: v.number(),
+        status: v.union(v.literal("pending"), v.literal("rejected"), v.literal("suggested")),
+        suggestedDate: v.optional(v.number()),
+        reason: v.optional(v.string()),
+      })),
     })
     .index("by_patient", ["patientId"])
     .index("by_doctor", ["doctorId"])
