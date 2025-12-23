@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut, Sun, Moon, Sunset } from "lucide-react";
+import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut, Sun, Moon, Sunset, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -139,6 +139,10 @@ export default function PatientHome() {
               <LogOut className="mr-2 h-4 w-4" /> Sign Out
             </Button>
             
+            <Button variant="outline" className="hidden sm:flex" onClick={() => navigate("/patient/hospitals")}>
+              <MapPin className="mr-2 h-4 w-4" /> Nearby
+            </Button>
+
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button 
