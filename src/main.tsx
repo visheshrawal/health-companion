@@ -21,6 +21,7 @@ const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"
 const PatientDiscover = lazy(() => import("./pages/patient/Discover.tsx"));
 const DoctorHome = lazy(() => import("./pages/doctor/Home.tsx"));
 const AppointmentDetail = lazy(() => import("./pages/doctor/AppointmentDetail.tsx"));
+const DoctorAnalysis = lazy(() => import("./pages/doctor/Analysis.tsx"));
 import ConsultationHistory from "./pages/patient/ConsultationHistory";
 
 // Simple loading fallback for route transitions
@@ -84,6 +85,7 @@ createRoot(document.getElementById("root")!).render(
               {/* Doctor Routes */}
               <Route path="/doctor" element={<DoctorHome />} />
               <Route path="/doctor/appointments/:id" element={<AppointmentDetail />} />
+              <Route path="/doctor/analysis" element={<DoctorAnalysis />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

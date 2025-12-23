@@ -112,6 +112,24 @@ export const getCompletedAppointments = query({
   }
 });
 
+export const getDoctorStats = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const appointments = await ctx.db
+      .query("appointments")
+      .withIndex("by_doctor", (q) => q.eq("doctorId", userId))
+      .collect();
+
+    // Return all appointments so we can analyze both completed and scheduled if needed, 
+    // but the prompt specifically asked for "visited", so we'll focus on completed in the frontend or here.
+    // Let's return completed ones for the analysis.
+    return appointments.filter(a => a.status === "completed");
+  },
+});
+
 export const requestReschedule = mutation({
   args: {
     appointmentId: v.id("appointments"),

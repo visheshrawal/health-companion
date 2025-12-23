@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, ChevronRight, LogOut, RefreshCw, Check, X, ArrowRight, Flag, Filter, Loader2 } from "lucide-react";
+import { Calendar, Clock, User, ChevronRight, LogOut, RefreshCw, Check, X, ArrowRight, Flag, Filter, Loader2, BarChart3, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { Link, useNavigate } from "react-router";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -233,12 +233,22 @@ export default function DoctorHome() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-8">
-        <header className="flex justify-between items-center">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Dr. {user?.name}</h1>
             <p className="text-muted-foreground">Welcome back to your dashboard.</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" asChild>
+              <Link to="/doctor/analysis">
+                <BarChart3 className="mr-2 h-4 w-4" /> Analysis
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/profile">
+                <Settings className="mr-2 h-4 w-4" /> Profile
+              </Link>
+            </Button>
             <Dialog open={isAvailabilityOpen} onOpenChange={setIsAvailabilityOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
