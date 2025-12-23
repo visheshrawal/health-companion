@@ -9,6 +9,17 @@ import { toast } from "sonner";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function PatientHome() {
   const user = useQuery(api.users.currentUser);
@@ -109,15 +120,33 @@ export default function PatientHome() {
             <Button variant="outline" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" /> Sign Out
             </Button>
-            <Button 
-              variant="destructive" 
-              className="shadow-lg shadow-destructive/20 animate-pulse" 
-              onClick={handleSOS}
-              disabled={isSendingSOS}
-            >
-              <AlertCircle className="mr-2 h-4 w-4" />
-              {isSendingSOS ? "Sending..." : "SOS"}
-            </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="shadow-lg shadow-destructive/20 animate-pulse" 
+                  disabled={isSendingSOS}
+                >
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  {isSendingSOS ? "Sending..." : "SOS"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will immediately send an emergency email alert to your registered emergency contact with your current location.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleSOS} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Yes, Send SOS
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </header>
 

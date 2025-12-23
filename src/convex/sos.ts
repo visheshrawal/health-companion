@@ -27,9 +27,13 @@ export const trigger = action({
 
     const { name, email } = user.patientProfile.emergencyContact;
     
+    if (!process.env.VLY_INTEGRATION_KEY) {
+      throw new Error("System Error: VLY_INTEGRATION_KEY is not set");
+    }
+
     // Initialize Vly Integration
     const vly = new VlyIntegrations({
-      apiKey: process.env.VLY_INTEGRATION_KEY!,
+      token: process.env.VLY_INTEGRATION_KEY!,
     } as any);
 
     const subject = `🆘 EMERGENCY: ${user.name} needs help`;
