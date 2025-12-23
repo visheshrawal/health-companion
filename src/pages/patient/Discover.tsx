@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen, Play, Lightbulb, Heart, Bookmark, Share2, ExternalLink, Search } from "lucide-react";
+import { BookOpen, Play, Lightbulb, Heart, Bookmark, Share2, ExternalLink, Search, MessageCircle, Facebook, Twitter, Mail, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function Discover() {
   const feed = useQuery(api.content.getFeed);
@@ -19,6 +20,8 @@ export default function Discover() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [viewContent, setViewContent] = useState<any>(null);
+  const [shareContent, setShareContent] = useState<any>(null);
 
   // Auto-seed content if empty (for demo purposes)
   useEffect(() => {
@@ -48,12 +51,10 @@ export default function Discover() {
     }
   };
 
-  const handleShare = (title: string, e: React.MouseEvent) => {
+  const openShareDialog = (item: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // In a real app, this would use the Web Share API
-    navigator.clipboard.writeText(window.location.href);
-    toast.success("Link copied to clipboard!");
+    setShareContent(item);
   };
 
   const filteredFeed = feed?.filter(item => {
@@ -107,7 +108,11 @@ export default function Discover() {
 
           <TabsContent value={activeTab} className="mt-6 space-y-6">
             {filteredFeed?.map((item) => (
-              <Card key={item._id} className="overflow-hidden hover:shadow-md transition-shadow group">
+              <Card 
+                key={item._id} 
+                className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
+                onClick={() => setViewContent(item)}
+              >
                 <div className="flex flex-col md:flex-row">
                   {item.imageUrl && (
                     <div className="md:w-1/3 h-48 md:h-auto relative overflow-hidden">
@@ -171,7 +176,7 @@ export default function Discover() {
                           variant="ghost" 
                           size="sm" 
                           className="gap-2 text-muted-foreground"
-                          onClick={(e) => handleShare(item.title, e)}
+                          onClick={(e) => openShareDialog(item, e)}
                         >
                           <Share2 className="h-4 w-4" />
                           <span className="hidden sm:inline">Share</span>
@@ -200,6 +205,96 @@ export default function Discover() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* View Content Dialog */}
+        <Dialog open={!!viewContent} onOpenChange={(open) => !open && setViewContent(null)}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <Badge variant="secondary" className="capitalize">
+                  {viewContent?.type}
+                </Badge>
+                <span>•</span>
+                <span>{viewContent?.source || "Health Companion"}</span>
+                <span>•</span>
+                <span>{viewContent && formatDistanceToNow(viewContent.publishedAt, { addSuffix: true })}</span>
+              </div>
+              <DialogTitle className="text-2xl">{viewContent?.title}</DialogTitle>
+            </DialogHeader>
+            
+            <div className="space-y-6">
+              {viewContent?.imageUrl && (
+                <img 
+                  src={viewContent.imageUrl} 
+                  alt={viewContent.title} 
+                  className="w-full h-64 object-cover rounded-lg"
+                />
+              )}
+              
+              <div className="prose dark:prose-invert max-w-none">
+                <p className="whitespace-pre-wrap text-lg leading-relaxed">{viewContent?.body}</p>
+              </div>
+
+              {viewContent?.type === "video" && viewContent?.url && (
+                <div className="pt-4">
+                  <Button className="w-full" size="lg" asChild>
+                    <a href={viewContent.url} target="_blank" rel="noopener noreferrer">
+                      <Play className="mr-2 h-5 w-5" /> Watch Video
+                    </a>
+                  </Button>
+                </div>
+              )}
+               
+               {viewContent?.type === "article" && viewContent?.url && (
+                 <div className="pt-4">
+                   <Button variant="outline" className="w-full" size="lg" asChild>
+                     <a href={viewContent.url} target="_blank" rel="noopener noreferrer">
+                       <ExternalLink className="mr-2 h-5 w-5" /> Read Full Article
+                     </a>
+                   </Button>
+                 </div>
+               )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Share Dialog */}
+        <Dialog open={!!shareContent} onOpenChange={(open) => !open && setShareContent(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Content</DialogTitle>
+              <DialogDescription>
+                Share "{shareContent?.title}" with your friends and family.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-3 gap-4 py-4">
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareContent?.title + ' ' + window.location.href)}`, '_blank')}>
+                  <MessageCircle className="h-6 w-6 text-green-500" />
+                  <span className="text-xs">WhatsApp</span>
+               </Button>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20" onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')}>
+                  <Facebook className="h-6 w-6 text-blue-600" />
+                  <span className="text-xs">Facebook</span>
+               </Button>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20" onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareContent?.title)}&url=${encodeURIComponent(window.location.href)}`, '_blank')}>
+                  <Twitter className="h-6 w-6 text-sky-500" />
+                  <span className="text-xs">Twitter</span>
+               </Button>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2" onClick={() => window.open(`mailto:?subject=${encodeURIComponent(shareContent?.title)}&body=${encodeURIComponent('Check this out: ' + window.location.href)}`)}>
+                  <Mail className="h-6 w-6 text-gray-500" />
+                  <span className="text-xs">Email</span>
+               </Button>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2" onClick={() => {
+                 navigator.clipboard.writeText(window.location.href);
+                 toast.success("Link copied!");
+                 setShareContent(null);
+               }}>
+                  <LinkIcon className="h-6 w-6" />
+                  <span className="text-xs">Copy Link</span>
+               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PatientLayout>
   );
