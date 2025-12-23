@@ -28,10 +28,17 @@ export default function Discover() {
   // Auto-seed/update content if empty or missing URLs
   useEffect(() => {
     if (feed) {
+      // Known broken URLs to force update
+      const brokenUrls = [
+        "https://www.youtube.com/watch?v=v7AYKMP6rOE",
+        "https://www.youtube.com/watch?v=ssss7V1_eyA",
+        "https://www.youtube.com/watch?v=sAf67xFS-qA"
+      ];
+
       // Check if we have any articles that are missing URLs or have placeholder URLs
       const hasIncompleteData = feed.some(item => 
         (item.type === 'article' || item.type === 'video') && 
-        (!item.url || item.url.includes("example"))
+        (!item.url || item.url.includes("example") || brokenUrls.includes(item.url))
       );
       
       const needsUpdate = feed.length === 0 || hasIncompleteData;
