@@ -1,9 +1,9 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, Link } from "react-router";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Id } from "@/convex/_generated/dataModel";
 import { ImageCropper } from "@/components/ImageCropper";
@@ -15,6 +15,7 @@ import { Achievements } from "@/components/profile/Achievements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, FileText, Settings, Trophy } from "lucide-react";
 import { PatientLayout } from "@/components/PatientNav";
+import { Button } from "@/components/ui/button";
 
 export default function Profile() {
   const user = useQuery(api.users.currentUser);
@@ -245,6 +246,16 @@ export default function Profile() {
   if (user?.profileCompleted && !isEditing) {
     const content = (
       <div className="container max-w-4xl mx-auto p-4 md:p-8 space-y-8">
+        {user.role === "doctor" && (
+          <div className="flex items-center justify-start">
+            <Button variant="ghost" asChild className="-ml-4 text-muted-foreground hover:text-foreground">
+              <Link to="/doctor">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+        )}
         <Tabs defaultValue="view" className="w-full">
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="view" className="flex items-center gap-2">
