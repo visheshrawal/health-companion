@@ -10,9 +10,7 @@ export default function Landing() {
     <div className="min-h-screen flex flex-col bg-background">
       <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2 font-bold text-xl text-primary">
-          <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-            HC
-          </div>
+          <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-8 w-8 object-contain" />
           Health Companion
         </div>
         <div className="flex gap-4">

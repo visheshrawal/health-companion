@@ -10,7 +10,7 @@ interface ProfileViewProps {
   handleSignOut: () => void;
   fileInputRef: any;
   onFileSelect: any;
-  medicalRecordsSection: React.ReactNode;
+  isLoading?: boolean;
 }
 
 export function ProfileView({ 
@@ -20,7 +20,7 @@ export function ProfileView({
   handleSignOut, 
   fileInputRef, 
   onFileSelect,
-  medicalRecordsSection 
+  isLoading
 }: ProfileViewProps) {
   const content = (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -28,13 +28,13 @@ export function ProfileView({
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">My Profile</h1>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsEditing(true)}>
+            <Button variant="outline" onClick={() => setIsEditing(true)} disabled={isLoading}>
               <Edit2 className="mr-2 h-4 w-4" /> Update Details
             </Button>
-            <Button variant="destructive" onClick={handleResetData} className="bg-red-700 hover:bg-red-800">
+            <Button variant="destructive" onClick={handleResetData} className="bg-red-700 hover:bg-red-800" disabled={isLoading}>
               <Trash2 className="mr-2 h-4 w-4" /> Reset Data
             </Button>
-            <Button variant="destructive" onClick={handleSignOut}>
+            <Button variant="destructive" onClick={handleSignOut} disabled={isLoading}>
               <LogOut className="mr-2 h-4 w-4" /> Sign Out
             </Button>
           </div>

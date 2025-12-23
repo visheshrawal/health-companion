@@ -54,9 +54,7 @@ export function PatientLayout({ children }: { children: React.ReactNode }) {
       <div className="md:flex">
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 border-r bg-card/50 backdrop-blur-xl p-6">
           <div className="flex items-center gap-2 mb-8">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
-              HC
-            </div>
+            <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-8 w-8 object-contain" />
             <span className="font-bold text-xl">Health Companion</span>
           </div>
           <nav className="space-y-2 flex-1">
