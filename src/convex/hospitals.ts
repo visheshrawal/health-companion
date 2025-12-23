@@ -9,7 +9,7 @@ export const searchNearby = action({
     radius: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+    const apiKey = process.env.GOOGLE_MAPS_API_KEY || "AIzaSyDPWPSRYwKY4uszWVQ2mz5cpUGIRquzAGY";
     if (!apiKey) {
       throw new Error("Google Maps API key is not configured on the server.");
     }

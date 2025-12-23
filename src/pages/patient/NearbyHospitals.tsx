@@ -54,7 +54,7 @@ export default function NearbyHospitals() {
     } else if (!window.google?.maps) {
       // Try to load script if API key is available in env (Vite)
       // Note: This requires VITE_GOOGLE_MAPS_API_KEY to be set
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyDPWPSRYwKY4uszWVQ2mz5cpUGIRquzAGY";
       if (apiKey) {
         const script = document.createElement("script");
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
