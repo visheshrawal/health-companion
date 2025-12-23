@@ -23,6 +23,7 @@ export default function Profile() {
   const medicalRecords = useQuery(api.medicalRecords.list);
   const addMedicalRecord = useMutation(api.medicalRecords.add);
   const removeMedicalRecord = useMutation(api.medicalRecords.remove);
+  const resetData = useMutation(api.cleanup.resetAccountData);
   
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
@@ -96,6 +97,17 @@ export default function Profile() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleResetData = async () => {
+    if (confirm("Are you sure you want to delete all your medical data (appointments, medications, records)? This cannot be undone.")) {
+      try {
+        await resetData();
+        toast.success("All medical data has been reset.");
+      } catch (error) {
+        toast.error("Failed to reset data.");
+      }
+    }
   };
 
   const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,6 +252,9 @@ export default function Profile() {
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setIsEditing(true)}>
                 <Edit2 className="mr-2 h-4 w-4" /> Update Details
+              </Button>
+              <Button variant="destructive" onClick={handleResetData} className="bg-red-700 hover:bg-red-800">
+                <Trash2 className="mr-2 h-4 w-4" /> Reset Data
               </Button>
               <Button variant="destructive" onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
