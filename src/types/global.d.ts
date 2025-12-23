@@ -9,5 +9,3 @@ declare global {
     navigateToAuth: (redirectUrl: string) => void;
   }
 }
-
-declare module 'canvas-confetti';
