@@ -61,13 +61,14 @@ export default function PatientAppointments() {
     }
   };
 
-  const handleBook = async () => {
+  const handleBook = async (additionalData?: any) => {
     if (!selectedDoctor || !selectedSlot) return;
     try {
       await createAppointment({
         doctorId: selectedDoctor._id,
         date: selectedSlot,
         notes: bookingReason,
+        ...additionalData
       });
       toast.success("Appointment booked successfully");
       setIsBooking(false);
@@ -76,6 +77,7 @@ export default function PatientAppointments() {
       setSelectedSlot(null);
       setBookingReason("");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to book appointment");
     }
   };

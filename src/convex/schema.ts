@@ -101,6 +101,13 @@ const schema = defineSchema(
       notes: v.optional(v.string()),
       priority: v.optional(v.union(v.literal("high"), v.literal("medium"), v.literal("low"))),
       order: v.optional(v.number()),
+      // AI-enhanced fields
+      patientDescription: v.optional(v.string()),
+      aiEnhancedSummary: v.optional(v.string()),
+      showOriginalToDoctor: v.optional(v.boolean()),
+      symptomSeverity: v.optional(v.string()),
+      suggestedPriority: v.optional(v.string()),
+      
       rescheduleRequest: v.optional(v.object({
         newDate: v.number(),
         status: v.union(v.literal("pending"), v.literal("rejected"), v.literal("suggested")),
