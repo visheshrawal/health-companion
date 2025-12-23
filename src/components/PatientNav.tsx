@@ -1,4 +1,4 @@
-import { Home, Pill, Calendar, User, Stethoscope, FileText } from "lucide-react";
+import { Home, Pill, Calendar, User, Stethoscope, FileText, Compass } from "lucide-react";
 import { Link, useLocation } from "react-router";
 import { cn } from "@/lib/utils";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
@@ -12,6 +12,7 @@ export function PatientNav() {
   const navItems = [
     { href: "/patient", icon: Home, label: "Home" },
     { href: "/patient/medications", icon: Pill, label: "Meds" },
+    { href: "/patient/discover", icon: Compass, label: "Discover" },
     { href: "/patient/appointments", icon: Calendar, label: "Visits" },
     { href: "/patient/history", icon: FileText, label: "History" },
     { href: "/profile", icon: User, label: "Profile" },
@@ -32,7 +33,7 @@ export function PatientNav() {
               )}
             >
               <item.icon className="h-6 w-6" />
-              <span className="text-xs mt-1 font-medium">{item.label}</span>
+              <span className="text-[10px] mt-1 font-medium">{item.label}</span>
             </Link>
           );
         })}
@@ -66,6 +67,10 @@ export function PatientLayout({ children }: { children: React.ReactNode }) {
             <Link to="/patient/medications" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
               <Pill className="h-5 w-5" />
               Medications
+            </Link>
+            <Link to="/patient/discover" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
+              <Compass className="h-5 w-5" />
+              Discover
             </Link>
             <Link to="/patient/appointments" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
               <Calendar className="h-5 w-5" />

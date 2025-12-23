@@ -181,6 +181,30 @@ const schema = defineSchema(
       transcript: v.optional(v.string()),
       createdAt: v.number(),
     }).index("by_patient", ["patientId"]).index("by_appointment", ["appointmentId"]),
+
+    content: defineTable({
+      title: v.string(),
+      type: v.union(v.literal("article"), v.literal("video"), v.literal("tip")),
+      body: v.string(), // For articles/tips text, or description for videos
+      url: v.optional(v.string()), // For videos or external links
+      tags: v.array(v.string()), // e.g. ["Diabetes", "Hypertension", "General"]
+      imageUrl: v.optional(v.string()),
+      source: v.optional(v.string()),
+      publishedAt: v.number(),
+      author: v.optional(v.string()),
+    }).index("by_type", ["type"]),
+
+    saved_content: defineTable({
+      userId: v.id("users"),
+      contentId: v.id("content"),
+      savedAt: v.number(),
+    }).index("by_user", ["userId"]).index("by_user_and_content", ["userId", "contentId"]),
+
+    content_likes: defineTable({
+      userId: v.id("users"),
+      contentId: v.id("content"),
+      likedAt: v.number(),
+    }).index("by_user_and_content", ["userId", "contentId"]),
   },
   {
     schemaValidation: false,

@@ -18,6 +18,7 @@ const Profile = lazy(() => import("./pages/Profile.tsx"));
 const PatientHome = lazy(() => import("./pages/patient/Home.tsx"));
 const PatientMedications = lazy(() => import("./pages/patient/Medications.tsx"));
 const PatientAppointments = lazy(() => import("./pages/patient/Appointments.tsx"));
+const PatientDiscover = lazy(() => import("./pages/patient/Discover.tsx"));
 const DoctorHome = lazy(() => import("./pages/doctor/Home.tsx"));
 const AppointmentDetail = lazy(() => import("./pages/doctor/AppointmentDetail.tsx"));
 import ConsultationHistory from "./pages/patient/ConsultationHistory";
@@ -76,6 +77,7 @@ createRoot(document.getElementById("root")!).render(
               {/* Patient Routes */}
               <Route path="/patient" element={<PatientHome />} />
               <Route path="/patient/medications" element={<PatientMedications />} />
+              <Route path="/patient/discover" element={<PatientDiscover />} />
               <Route path="/patient/appointments" element={<PatientAppointments />} />
               <Route path="/patient/history" element={<ConsultationHistory />} />
               
