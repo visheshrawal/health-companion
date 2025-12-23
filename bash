@@ -1,1 +1,2 @@
-npx convex run users:listDoctors
+node inspect_vly.cjs
+

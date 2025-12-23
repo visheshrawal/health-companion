@@ -20,37 +20,55 @@ export const trigger = action({
        throw new Error("Only patients can trigger SOS");
     }
 
-    if (!user.patientProfile?.emergencyContact?.phone) {
-      throw new Error("No emergency contact configured. Please update your profile.");
+    if (!user.patientProfile?.emergencyContact?.email) {
+      throw new Error("No emergency contact email configured. Please update your profile.");
     }
 
-    const { name, phone } = user.patientProfile.emergencyContact;
+    const { name, email } = user.patientProfile.emergencyContact;
     
-    // Twilio Credentials - Set these in the Convex Dashboard > Settings > Environment Variables
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const fromPhone = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!accountSid || !authToken || !fromPhone) {
-      throw new Error("Twilio configuration missing. Please set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER in the Convex Dashboard.");
+    // Initialize Vly Integration
+    // Using require to avoid ESM/CJS interop issues with the package in this environment
+    const VlyIntegration = require("@vly-ai/integrations");
+    const VlyClass = VlyIntegration.Vly || VlyIntegration.default?.Vly || VlyIntegration.default;
+    
+    if (!VlyClass) {
+        console.error("Vly Integration Exports:", Object.keys(VlyIntegration));
+        throw new Error("Failed to initialize Vly integration");
     }
 
-    // Use require to avoid build resolution issues with the twilio package
-    const Twilio = require("twilio");
-    const client = Twilio(accountSid, authToken);
+    const vly = new VlyClass({
+      apiKey: process.env.VLY_INTEGRATION_KEY!,
+    });
 
-    const message = `SOS ALERT: ${user.name} has triggered an SOS alert! \n\nLocation: ${args.location || "Unknown"}.\n\nPlease contact them immediately or send help.`;
+    const subject = `🆘 EMERGENCY: ${user.name} needs help`;
+    const html = `
+      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #ef4444; margin-bottom: 20px;">SOS ALERT</h1>
+        <p style="font-size: 16px; line-height: 1.5;">
+          <strong>${user.name}</strong> has triggered an SOS alert from Health Companion at <strong>${new Date().toLocaleTimeString()}</strong>.
+        </p>
+        <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; font-weight: bold; color: #991b1b;">Location:</p>
+          <p style="margin: 5px 0 0 0;">
+            <a href="${args.location || "#"}" style="color: #dc2626; text-decoration: underline;">
+              ${args.location || "Unknown Location"}
+            </a>
+          </p>
+        </div>
+        <p style="font-size: 16px; font-weight: bold;">Please check on them immediately.</p>
+      </div>
+    `;
 
     try {
-      await client.messages.create({
-        body: message,
-        from: fromPhone,
-        to: phone,
+      await vly.email.send({
+        to: email,
+        subject: subject,
+        html: html,
       });
-      return { success: true, message: `SOS sent to ${name} (${phone})` };
+      return { success: true, message: `SOS email sent to ${name} (${email})` };
     } catch (error: any) {
-      console.error("Twilio error:", error);
-      throw new Error("Failed to send SOS SMS: " + error.message);
+      console.error("Email error:", error);
+      throw new Error("Failed to send SOS email: " + (error.message || error));
     }
   },
 });

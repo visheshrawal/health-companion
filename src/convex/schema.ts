@@ -34,6 +34,7 @@ const schema = defineSchema(
         emergencyContact: v.object({
           name: v.string(),
           phone: v.string(),
+          email: v.optional(v.string()),
         }),
       })),
 
@@ -57,6 +58,7 @@ const schema = defineSchema(
       emergencyContact: v.optional(v.object({
         name: v.string(),
         phone: v.string(),
+        email: v.optional(v.string()),
       })),
       specialization: v.optional(v.string()),
       bio: v.optional(v.string()),

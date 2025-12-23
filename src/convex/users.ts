@@ -57,6 +57,7 @@ export const updateProfile = mutation({
       emergencyContact: v.object({
         name: v.string(),
         phone: v.string(),
+        email: v.optional(v.string()),
       }),
     })),
 

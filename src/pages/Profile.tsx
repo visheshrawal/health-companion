@@ -47,6 +47,7 @@ export default function Profile() {
   const [allergies, setAllergies] = useState("");
   const [emergencyName, setEmergencyName] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [emergencyEmail, setEmergencyEmail] = useState("");
 
   // Doctor Fields
   const [specialization, setSpecialization] = useState("");
@@ -75,6 +76,7 @@ export default function Profile() {
         setAllergies(user.patientProfile.allergies.join(", "));
         setEmergencyName(user.patientProfile.emergencyContact.name);
         setEmergencyPhone(user.patientProfile.emergencyContact.phone);
+        setEmergencyEmail(user.patientProfile.emergencyContact.email || "");
       }
       
       if (user.doctorProfile) {
@@ -199,6 +201,7 @@ export default function Profile() {
             emergencyContact: {
               name: emergencyName,
               phone: emergencyPhone,
+              email: emergencyEmail,
             },
           }
         });
@@ -287,6 +290,7 @@ export default function Profile() {
       allergies={allergies} setAllergies={setAllergies}
       emergencyName={emergencyName} setEmergencyName={setEmergencyName}
       emergencyPhone={emergencyPhone} setEmergencyPhone={setEmergencyPhone}
+      emergencyEmail={emergencyEmail} setEmergencyEmail={setEmergencyEmail}
       specialization={specialization} setSpecialization={setSpecialization}
       license={license} setLicense={setLicense}
       affiliation={affiliation} setAffiliation={setAffiliation}

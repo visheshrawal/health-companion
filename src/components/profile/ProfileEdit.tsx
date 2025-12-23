@@ -27,6 +27,7 @@ interface ProfileEditProps {
   allergies: string; setAllergies: (v: string) => void;
   emergencyName: string; setEmergencyName: (v: string) => void;
   emergencyPhone: string; setEmergencyPhone: (v: string) => void;
+  emergencyEmail: string; setEmergencyEmail: (v: string) => void;
   // Doctor Fields
   specialization: string; setSpecialization: (v: string) => void;
   license: string; setLicense: (v: string) => void;
@@ -38,7 +39,7 @@ export function ProfileEdit({
   user, step, setStep, role, setRole, name, setName, isLoading,
   handleStep1Submit, handleStep2Submit, handleSignOut,
   dob, setDob, sex, setSex, bloodGroup, setBloodGroup, conditions, setConditions,
-  allergies, setAllergies, emergencyName, setEmergencyName, emergencyPhone, setEmergencyPhone,
+  allergies, setAllergies, emergencyName, setEmergencyName, emergencyPhone, setEmergencyPhone, emergencyEmail, setEmergencyEmail,
   specialization, setSpecialization, license, setLicense, affiliation, setAffiliation, bio, setBio
 }: ProfileEditProps) {
   
@@ -163,6 +164,10 @@ export function ProfileEdit({
                       <div className="space-y-2">
                         <Label htmlFor="emergencyPhone">Phone Number</Label>
                         <Input id="emergencyPhone" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} required placeholder="+1..." />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="emergencyEmail">Email Address</Label>
+                        <Input id="emergencyEmail" type="email" value={emergencyEmail} onChange={(e) => setEmergencyEmail(e.target.value)} required placeholder="emergency@example.com" />
                       </div>
                     </div>
                   </div>
