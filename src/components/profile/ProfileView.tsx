@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { User, Edit2, Trash2, LogOut, Camera } from "lucide-react";
 interface ProfileViewProps {
   user: any;
-  setIsEditing: (val: boolean) => void;
   handleResetData: () => void;
   handleSignOut: () => void;
   fileInputRef: any;
@@ -13,7 +12,6 @@ interface ProfileViewProps {
 
 export function ProfileView({ 
   user, 
-  setIsEditing, 
   handleResetData, 
   handleSignOut, 
   fileInputRef, 
@@ -25,9 +23,6 @@ export function ProfileView({
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">My Profile</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsEditing(true)} disabled={isLoading}>
-            <Edit2 className="mr-2 h-4 w-4" /> Update Details
-          </Button>
           <Button variant="destructive" onClick={handleResetData} className="bg-red-700 hover:bg-red-800" disabled={isLoading}>
             <Trash2 className="mr-2 h-4 w-4" /> Reset Data
           </Button>

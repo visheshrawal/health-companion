@@ -268,7 +268,6 @@ export default function Profile() {
           <TabsContent value="view" className="mt-6">
             <ProfileView 
               user={user} 
-              setIsEditing={setIsEditing}
               handleResetData={handleResetData}
               handleSignOut={handleSignOut}
               fileInputRef={fileInputRef}
