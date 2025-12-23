@@ -89,9 +89,17 @@ export function SymptomChecker({ children }: { children: React.ReactNode }) {
                   className="min-h-[150px] resize-none text-base"
                   value={symptoms}
                   onChange={(e) => setSymptoms(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      if (symptoms.trim() && !isAnalyzing) {
+                        handleAnalyze();
+                      }
+                    }
+                  }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Be as detailed as possible about duration, severity, and other sensations.
+                  Be as detailed as possible about duration, severity, and other sensations. Press Enter to analyze.
                 </p>
               </div>
 
