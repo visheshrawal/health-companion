@@ -2,7 +2,7 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 
-const GEMINI_API_KEY = "AIzaSyDC1fi94g4S1WIXHSFnRDzgTnh-8kJGIto";
+const GEMINI_API_KEY = "AIzaSyBTGQCS8i9yydgvBx6sS79DIYV4ygdVePc";
 
 export const analyzeSymptoms = action({
   args: { symptoms: v.string() },
@@ -58,9 +58,10 @@ export const analyzeSymptoms = action({
 
       const result = JSON.parse(jsonString);
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing symptoms:", error);
-      throw new Error("Failed to analyze symptoms. Please try again.");
+      // Propagate the actual error message for debugging
+      throw new Error(`Analysis failed: ${error.message || String(error)}`);
     }
   },
 });
