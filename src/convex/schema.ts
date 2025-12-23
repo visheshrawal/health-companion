@@ -52,6 +52,14 @@ const schema = defineSchema(
         })),
       })),
 
+      // Achievements System
+      achievements: v.optional(v.object({
+        unlocked: v.array(v.string()), // IDs of unlocked achievements e.g. "7_day_streak"
+        progress: v.record(v.string(), v.number()), // e.g. "articles_read": 3
+        totalScore: v.number(),
+        lastViewed: v.optional(v.number()), // timestamp of last view to show new badges
+      })),
+
       // Legacy fields (keeping for backward compatibility if needed, but new flow uses objects)
       age: v.optional(v.number()),
       conditions: v.optional(v.array(v.string())),

@@ -19,6 +19,7 @@ export default function Discover() {
   const toggleSave = useMutation(api.content.toggleSave);
   const toggleLike = useMutation(api.content.toggleLike);
   const seedContent = useMutation(api.content.seedContent);
+  const updateProgress = useMutation(api.achievements.updateProgress);
   
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
@@ -80,6 +81,15 @@ export default function Discover() {
   const handleCardClick = (item: any) => {
     // Always open the dialog to view details/summary first, allowing user to choose to read full article
     setViewContent(item);
+    
+    // Track achievement progress for viewing content
+    if (item.type === 'article') {
+       updateProgress({ key: "articles_read", increment: 1 }).then((newUnlocks) => {
+         if (newUnlocks && newUnlocks.length > 0) {
+           newUnlocks.forEach(title => toast.success(`🏆 Achievement Unlocked: ${title}!`));
+         }
+       }).catch(() => {}); // Ignore errors silently
+    }
   };
 
   const handleExternalLink = (url: string | undefined, e: React.MouseEvent) => {

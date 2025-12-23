@@ -20,6 +20,49 @@ export const list = query({
   },
 });
 
+export const generateUploadUrl = mutation({
+  args: {},
+  handler: async (ctx, args) => {
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+export const saveRecord = mutation({
+  args: {
+    title: v.string(),
+    storageId: v.id("_storage"),
+    format: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Unauthorized");
+
+    await ctx.db.insert("medicalRecords", {
+      userId,
+      title: args.title,
+      storageId: args.storageId,
+      format: args.format,
+      uploadedAt: Date.now(),
+    });
+
+    // Update achievement
+    const user = await ctx.db.get(userId);
+    if (user) {
+       let achievements = user.achievements || { unlocked: [], progress: {}, totalScore: 0 };
+       const current = achievements.progress["reports_uploaded"] || 0;
+       achievements.progress["reports_uploaded"] = current + 1;
+       
+       // Check unlock (duplicate logic from achievements.ts for now to avoid circular deps or complex imports)
+       if (achievements.progress["reports_uploaded"] >= 1 && !achievements.unlocked.includes("report_master")) {
+         achievements.unlocked.push("report_master");
+         achievements.totalScore += 50;
+       }
+       
+       await ctx.db.patch(userId, { achievements });
+    }
+  },
+});
+
 export const add = mutation({
   args: {
     title: v.string(),
