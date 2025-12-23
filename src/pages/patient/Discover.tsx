@@ -13,7 +13,9 @@ import { formatDistanceToNow } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function Discover() {
-  const feed = useQuery(api.content.getFeed);
+  // Generate a random seed on mount to refresh the feed
+  const [seed] = useState(() => Math.floor(Date.now()));
+  const feed = useQuery(api.content.getFeed, { seed });
   const toggleSave = useMutation(api.content.toggleSave);
   const toggleLike = useMutation(api.content.toggleLike);
   const seedContent = useMutation(api.content.seedContent);
@@ -57,10 +59,20 @@ export default function Discover() {
     setShareContent(item);
   };
 
+  const handleCardClick = (item: any) => {
+    // If it's an article or video with a URL, open in new tab
+    if (item.url && (item.type === "article" || item.type === "video")) {
+      window.open(item.url, "_blank");
+    } else {
+      // Otherwise open the dialog (e.g. for tips or internal content)
+      setViewContent(item);
+    }
+  };
+
   const filteredFeed = feed?.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.body.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+                          item.tags.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesTab = activeTab === "all" || 
                        (activeTab === "saved" && item.isSaved) ||
@@ -111,7 +123,7 @@ export default function Discover() {
               <Card 
                 key={item._id} 
                 className="overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
-                onClick={() => setViewContent(item)}
+                onClick={() => handleCardClick(item)}
               >
                 <div className="flex flex-col md:flex-row">
                   {item.imageUrl && (
@@ -120,6 +132,9 @@ export default function Discover() {
                         src={item.imageUrl} 
                         alt={item.title} 
                         className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000";
+                        }}
                       />
                       {item.type === "video" && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/10 transition-colors">
@@ -228,6 +243,9 @@ export default function Discover() {
                   src={viewContent.imageUrl} 
                   alt={viewContent.title} 
                   className="w-full h-64 object-cover rounded-lg"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&q=80&w=1000";
+                  }}
                 />
               )}
               
@@ -268,24 +286,24 @@ export default function Discover() {
               </DialogDescription>
             </DialogHeader>
             <div className="grid grid-cols-3 gap-4 py-4">
-               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareContent?.title + ' ' + window.location.href)}`, '_blank')}>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-900/20" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(shareContent?.title + ' ' + (shareContent?.url || window.location.href))}`, '_blank')}>
                   <MessageCircle className="h-6 w-6 text-green-500" />
                   <span className="text-xs">WhatsApp</span>
                </Button>
-               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20" onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank')}>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-900/20" onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareContent?.url || window.location.href)}`, '_blank')}>
                   <Facebook className="h-6 w-6 text-blue-600" />
                   <span className="text-xs">Facebook</span>
                </Button>
-               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20" onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareContent?.title)}&url=${encodeURIComponent(window.location.href)}`, '_blank')}>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2 hover:bg-sky-50 hover:text-sky-600 dark:hover:bg-sky-900/20" onClick={() => window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareContent?.title)}&url=${encodeURIComponent(shareContent?.url || window.location.href)}`, '_blank')}>
                   <Twitter className="h-6 w-6 text-sky-500" />
                   <span className="text-xs">Twitter</span>
                </Button>
-               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2" onClick={() => window.open(`mailto:?subject=${encodeURIComponent(shareContent?.title)}&body=${encodeURIComponent('Check this out: ' + window.location.href)}`)}>
+               <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2" onClick={() => window.open(`mailto:?subject=${encodeURIComponent(shareContent?.title)}&body=${encodeURIComponent('Check this out: ' + (shareContent?.url || window.location.href))}`)}>
                   <Mail className="h-6 w-6 text-gray-500" />
                   <span className="text-xs">Email</span>
                </Button>
                <Button variant="outline" className="flex flex-col items-center h-auto py-4 gap-2" onClick={() => {
-                 navigator.clipboard.writeText(window.location.href);
+                 navigator.clipboard.writeText(shareContent?.url || window.location.href);
                  toast.success("Link copied!");
                  setShareContent(null);
                }}>
