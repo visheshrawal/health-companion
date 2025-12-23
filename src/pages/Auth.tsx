@@ -272,56 +272,36 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             </div>
           </div>
           {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+          <Button type="submit" className="w-full" disabled={isLoading} onClick={flow === "signIn" ? handleSignIn : handleSignUp}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (flow === "signIn" ? "Sign In" : "Sign Up")}
           </Button>
+          
+          <div className="text-center text-sm">
+            {flow === "signIn" ? (
+              <>
+                Don't have an account?{" "}
+                <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signUp")}>
+                  Sign up
+                </Button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signIn")}>
+                  Sign in
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-      <div className="flex flex-col justify-center p-8 md:p-16 bg-muted">
-        <div className="w-full max-w-md mx-auto space-y-8">
-          <div className="flex items-center gap-2 font-bold text-2xl text-primary mb-8">
-            <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-8 w-8 object-contain" />
-            Health Companion
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
-                className="pl-9" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setFlow("forgotPassword")}>
-                Forgot password?
-              </Button>
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                id="password" 
-                type="password" 
-                className="pl-9" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-              />
-            </div>
-          </div>
-          {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
-          </Button>
+      <div className="hidden md:flex flex-col justify-center p-8 md:p-16 bg-muted">
+        <div className="w-full max-w-md mx-auto space-y-6 text-center">
+          <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-32 w-32 mx-auto object-contain mb-4" />
+          <h2 className="text-3xl font-bold tracking-tight">Your Health, Simplified</h2>
+          <p className="text-muted-foreground text-lg">
+            Manage appointments, track medications, and consult with doctors all in one secure platform.
+          </p>
         </div>
       </div>
     </div>
