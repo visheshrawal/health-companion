@@ -4,7 +4,7 @@ import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
+import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import { format, addDays, startOfWeek, startOfDay } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -13,15 +13,21 @@ import { Badge } from "@/components/ui/badge";
 export default function PatientAppointments() {
   const appointments = useQuery(api.appointments.listForPatient);
   const requestReschedule = useMutation(api.appointments.requestReschedule);
+  const createAppointment = useMutation(api.appointments.create);
+  const doctors = useQuery(api.users.listDoctors);
   
   const [selectedApt, setSelectedApt] = useState<any>(null);
   const [isRescheduling, setIsRescheduling] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [weekStart, setWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }).getTime());
 
-  // Fetch slots only when rescheduling dialog is open and an appointment is selected
+  // Fetch slots when rescheduling or booking
   const slots = useQuery(api.appointments.getDoctorSlots, 
-    selectedApt && isRescheduling ? { doctorId: selectedApt.doctorId, weekStart } : "skip"
+    (isRescheduling && selectedApt) ? { doctorId: selectedApt.doctorId, weekStart } :
+    (isBooking && selectedDoctor) ? { doctorId: selectedDoctor._id, weekStart } :
+    "skip"
   );
 
   const handleReschedule = async () => {
@@ -41,8 +47,26 @@ export default function PatientAppointments() {
     }
   };
 
+  const handleBook = async () => {
+    if (!selectedDoctor || !selectedDate) return;
+    try {
+      await createAppointment({
+        doctorId: selectedDoctor._id,
+        date: selectedDate,
+        notes: "Booked via patient portal",
+      });
+      toast.success("Appointment booked successfully");
+      setIsBooking(false);
+      setSelectedDoctor(null);
+      setSelectedDate(null);
+    } catch (error) {
+      toast.error("Failed to book appointment");
+    }
+  };
+
   const upcomingAppointments = appointments?.filter(a => a.status === "scheduled" && a.date > Date.now()) || [];
-  const pastAppointments = appointments?.filter(a => a.status === "completed" || a.status === "cancelled" || a.date <= Date.now()) || [];
+  // Filter out cancelled appointments from past list
+  const pastAppointments = appointments?.filter(a => (a.status === "completed" || a.date <= Date.now()) && a.status !== "cancelled") || [];
 
   return (
     <PatientLayout>
@@ -53,9 +77,97 @@ export default function PatientAppointments() {
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" /> Upcoming Visits
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" /> Upcoming Visits
+            </h2>
+            <Dialog open={isBooking} onOpenChange={(open) => {
+              setIsBooking(open);
+              if (!open) {
+                setSelectedDoctor(null);
+                setSelectedDate(null);
+              }
+            }}>
+              <DialogTrigger asChild>
+                <Button>Find a Doctor</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{selectedDoctor ? `Book with Dr. ${selectedDoctor.name}` : "Find a Doctor"}</DialogTitle>
+                  <DialogDescription>
+                    {selectedDoctor ? "Select a time slot for your appointment." : "Choose a doctor to view available times."}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {!selectedDoctor ? (
+                  <div className="grid gap-4 py-4">
+                    {doctors?.map((doc) => (
+                      <div key={doc._id} className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => setSelectedDoctor(doc)}>
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                            {doc.name?.[0]}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">Dr. {doc.name}</h3>
+                            <p className="text-sm text-muted-foreground">{doc.doctorProfile?.specialization || "General Practice"}</p>
+                            <p className="text-xs text-muted-foreground">{doc.doctorProfile?.affiliation}</p>
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="sm"><ArrowRight className="h-4 w-4" /></Button>
+                      </div>
+                    ))}
+                    {doctors?.length === 0 && <p className="text-center text-muted-foreground">No doctors found.</p>}
+                  </div>
+                ) : (
+                  <div className="space-y-4 py-4">
+                    <Button variant="ghost" size="sm" onClick={() => { setSelectedDoctor(null); setSelectedDate(null); }} className="mb-2">
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back to Doctors
+                    </Button>
+                    
+                    <div className="flex justify-between items-center">
+                      <Button variant="ghost" onClick={() => setWeekStart(d => d - 7 * 24 * 60 * 60 * 1000)}>Previous Week</Button>
+                      <span className="font-medium">Week of {format(weekStart, "MMM d")}</span>
+                      <Button variant="ghost" onClick={() => setWeekStart(d => d + 7 * 24 * 60 * 60 * 1000)}>Next Week</Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {slots ? slots.map((slot: any) => {
+                        const isSelected = slot.date === selectedDate;
+                        
+                        return (
+                          <Button
+                            key={slot.date}
+                            variant={isSelected ? "default" : "outline"}
+                            className={`
+                              h-auto py-3 flex flex-col gap-1
+                              ${!slot.available ? "opacity-50 cursor-not-allowed bg-red-50 dark:bg-red-900/10 border-red-200" : ""}
+                              ${slot.available ? "border-green-200 hover:border-green-500 hover:bg-green-50 dark:hover:bg-green-900/20" : ""}
+                            `}
+                            disabled={!slot.available}
+                            onClick={() => setSelectedDate(slot.date)}
+                          >
+                            <span className="text-xs font-medium">{format(slot.date, "EEE, MMM d")}</span>
+                            <span className="text-sm font-bold">{format(slot.date, "h:mm a")}</span>
+                          </Button>
+                        );
+                      }) : (
+                        <div className="col-span-full text-center py-8">Loading slots...</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsBooking(false)}>Cancel</Button>
+                  {selectedDoctor && (
+                    <Button onClick={handleBook} disabled={!selectedDate}>
+                      Book Appointment
+                    </Button>
+                  )}
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
           
           {upcomingAppointments.length === 0 ? (
             <Card className="border-dashed">
@@ -63,7 +175,7 @@ export default function PatientAppointments() {
                 <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
                 <p className="text-lg font-medium">No upcoming appointments</p>
                 <p className="text-muted-foreground">Book a consultation with a doctor to get started.</p>
-                <Button className="mt-4" variant="outline">Find a Doctor</Button>
+                <Button className="mt-4" variant="outline" onClick={() => setIsBooking(true)}>Find a Doctor</Button>
               </CardContent>
             </Card>
           ) : (

@@ -144,6 +144,29 @@ export const updatePriority = mutation({
   },
 });
 
+export const create = mutation({
+  args: {
+    doctorId: v.id("users"),
+    date: v.number(),
+    notes: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const patientId = await getAuthUserId(ctx);
+    if (!patientId) throw new Error("Unauthorized");
+
+    const appointmentId = await ctx.db.insert("appointments", {
+      patientId,
+      doctorId: args.doctorId,
+      date: args.date,
+      status: "scheduled",
+      notes: args.notes,
+      priority: "low",
+    });
+
+    return appointmentId;
+  },
+});
+
 export const getDoctorSlots = query({
   args: { doctorId: v.id("users"), weekStart: v.number() },
   handler: async (ctx, args) => {
