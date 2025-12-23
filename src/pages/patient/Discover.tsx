@@ -28,7 +28,13 @@ export default function Discover() {
   // Auto-seed/update content if empty or missing URLs
   useEffect(() => {
     if (feed) {
-      const needsUpdate = feed.length === 0 || (feed.length > 0 && !feed[0].url && feed[0].type !== 'tip');
+      // Check if we have any articles that are missing URLs
+      const hasIncompleteData = feed.some(item => 
+        (item.type === 'article' || item.type === 'video') && !item.url
+      );
+      
+      const needsUpdate = feed.length === 0 || hasIncompleteData;
+      
       if (needsUpdate) {
         seedContent();
       }
@@ -65,6 +71,15 @@ export default function Discover() {
   const handleCardClick = (item: any) => {
     // Always open the dialog to view details/summary first, allowing user to choose to read full article
     setViewContent(item);
+  };
+
+  const handleExternalLink = (url: string | undefined, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!url) {
+      toast.error("No link available");
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   const filteredFeed = feed?.filter(item => {
@@ -192,6 +207,17 @@ export default function Discover() {
                           <Share2 className="h-4 w-4" />
                           <span className="hidden sm:inline">Share</span>
                         </Button>
+                        {item.url && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="gap-2 text-muted-foreground hover:text-primary"
+                            onClick={(e) => handleExternalLink(item.url, e)}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                            <span className="hidden sm:inline">Open</span>
+                          </Button>
+                        )}
                       </div>
                       <Button 
                         variant="ghost" 
@@ -249,20 +275,16 @@ export default function Discover() {
 
               {viewContent?.type === "video" && viewContent?.url && (
                 <div className="pt-4">
-                  <Button className="w-full" size="lg" asChild>
-                    <a href={viewContent.url} target="_blank" rel="noopener noreferrer">
-                      <Play className="mr-2 h-5 w-5" /> Watch Video
-                    </a>
+                  <Button className="w-full" size="lg" onClick={() => window.open(viewContent.url, '_blank', 'noopener,noreferrer')}>
+                    <Play className="mr-2 h-5 w-5" /> Watch Video
                   </Button>
                 </div>
               )}
                
                {viewContent?.type === "article" && viewContent?.url && (
                  <div className="pt-4">
-                   <Button variant="outline" className="w-full" size="lg" asChild>
-                     <a href={viewContent.url} target="_blank" rel="noopener noreferrer">
-                       <ExternalLink className="mr-2 h-5 w-5" /> Read Full Article
-                     </a>
+                   <Button variant="outline" className="w-full" size="lg" onClick={() => window.open(viewContent.url, '_blank', 'noopener,noreferrer')}>
+                     <ExternalLink className="mr-2 h-5 w-5" /> Read Full Article
                    </Button>
                  </div>
                )}

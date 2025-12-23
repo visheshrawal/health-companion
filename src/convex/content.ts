@@ -18,6 +18,14 @@ export const getFeed = query({
     // Fetch all content (in a real app, we would filter/paginate more efficiently)
     const allContent = await ctx.db.query("content").order("desc").take(50);
 
+    // Filter out invalid content (articles/videos must have a URL)
+    const validContent = allContent.filter(item => {
+      if (item.type === 'article' || item.type === 'video') {
+        return item.url && item.url.length > 0;
+      }
+      return true;
+    });
+
     // Get user's saved and liked content
     const saved = await ctx.db
       .query("saved_content")
@@ -32,7 +40,7 @@ export const getFeed = query({
     const likedIds = new Set(likes.map(l => l.contentId));
 
     // Score and sort content
-    const scoredContent = allContent.map(item => {
+    const scoredContent = validContent.map(item => {
       let score = 0;
       
       // Personalization score
@@ -124,9 +132,6 @@ export const toggleLike = mutation({
 export const seedContent = mutation({
   args: {},
   handler: async (ctx) => {
-    const existingCount = (await ctx.db.query("content").take(20)).length;
-    if (existingCount >= 10) return; // Already seeded enough
-
     const initialContent = [
       {
         title: "Managing Diabetes: The Basics",
@@ -223,8 +228,27 @@ export const seedContent = mutation({
       }
     ];
 
+    // Fetch all existing content to check for updates
+    const allExisting = await ctx.db.query("content").collect();
+    const existingMap = new Map(allExisting.map(item => [item.title, item]));
+
     for (const item of initialContent) {
-      await ctx.db.insert("content", item as any);
+      const existing = existingMap.get(item.title);
+
+      if (existing) {
+        // Update if missing URL or Image, or just to ensure data is fresh
+        // Also update if the URL in seed is different (e.g. we fixed a broken link)
+        if ((!existing.url && item.url) || (item.url && existing.url !== item.url)) {
+           await ctx.db.patch(existing._id, {
+             url: item.url,
+             imageUrl: item.imageUrl || existing.imageUrl,
+             body: item.body,
+             source: item.source
+           });
+        }
+      } else {
+        await ctx.db.insert("content", item as any);
+      }
     }
   }
 });
