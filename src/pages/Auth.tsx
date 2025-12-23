@@ -229,258 +229,100 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background">
-      <div className="w-full max-w-md">
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center gap-2 font-bold text-2xl text-primary cursor-pointer" onClick={() => navigate("/")}>
-            <div className="h-10 w-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground">
-              HC
-            </div>
-            HealthcareCompanion
+    <div className="min-h-screen grid md:grid-cols-2">
+      <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
+        <div className="w-full max-w-md mx-auto space-y-8">
+          <div className="flex items-center gap-2 font-bold text-2xl text-primary mb-8">
+            <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-8 w-8 object-contain" />
+            Health Companion
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="name@example.com" 
+                className="pl-9" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setFlow("forgotPassword")}>
+                Forgot password?
+              </Button>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="password" 
+                type="password" 
+                className="pl-9" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+              />
+            </div>
+          </div>
+          {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+          </Button>
         </div>
-
-        <Card className="border-primary/10 shadow-xl gap-0">
-          <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl">
-              {flow === "signIn" && "Welcome Back"}
-              {flow === "signUp" && "Create Account"}
-              {flow === "verify" && "Verify Email"}
-              {flow === "forgotPassword" && "Reset Password"}
-              {flow === "resetPassword" && "Set New Password"}
-            </CardTitle>
-            <CardDescription>
-              {flow === "signIn" && "Enter your credentials to access your account"}
-              {flow === "signUp" && "Enter your details to get started"}
-              {flow === "verify" && `Enter the code sent to ${email}`}
-              {flow === "forgotPassword" && "Enter your email to receive a reset code"}
-              {flow === "resetPassword" && "Create a new password for your account"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {flow === "signIn" && (
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="name@example.com" 
-                      className="pl-9" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setFlow("forgotPassword")}>
-                      Forgot password?
-                    </Button>
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      className="pl-9" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-                {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
-                </Button>
-              </form>
-            )}
-
-            {flow === "signUp" && (
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="name@example.com" 
-                      className="pl-9" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      className="pl-9" 
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required 
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Min 8 chars, 1 uppercase, 1 number, 1 special char
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="confirmPassword" 
-                      type="password" 
-                      className="pl-9" 
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-                {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
-                </Button>
-              </form>
-            )}
-
-            {flow === "verify" && (
-              <form onSubmit={handleVerify} className="space-y-4">
-                <div className="flex justify-center py-4">
-                  <InputOTP
-                    value={otp}
-                    onChange={setOtp}
-                    maxLength={6}
-                    disabled={isLoading}
-                  >
-                    <InputOTPGroup>
-                      {Array.from({ length: 6 }).map((_, index) => (
-                        <InputOTPSlot key={index} index={index} />
-                      ))}
-                    </InputOTPGroup>
-                  </InputOTP>
-                </div>
-                {error && <div className="text-sm text-destructive flex items-center gap-2 justify-center"><AlertCircle className="h-4 w-4" /> {error}</div>}
-                <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify Email"}
-                </Button>
-                <Button type="button" variant="outline" className="w-full" onClick={handleResendCode} disabled={isLoading}>
-                  Resend Code
-                </Button>
-              </form>
-            )}
-
-            {flow === "forgotPassword" && (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="name@example.com" 
-                      className="pl-9" 
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required 
-                    />
-                  </div>
-                </div>
-                {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Reset Code"}
-                </Button>
-              </form>
-            )}
-
-            {flow === "resetPassword" && (
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Verification Code</Label>
-                  <div className="flex justify-center">
-                    <InputOTP
-                      value={otp}
-                      onChange={setOtp}
-                      maxLength={6}
-                      disabled={isLoading}
-                    >
-                      <InputOTPGroup>
-                        {Array.from({ length: 6 }).map((_, index) => (
-                          <InputOTPSlot key={index} index={index} />
-                        ))}
-                      </InputOTPGroup>
-                    </InputOTP>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
-                  <Input 
-                    id="newPassword" 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmNewPassword">Confirm New Password</Label>
-                  <Input 
-                    id="confirmNewPassword" 
-                    type="password" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required 
-                  />
-                </div>
-                {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-                <Button type="submit" className="w-full" disabled={isLoading || otp.length !== 6}>
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Reset Password"}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-          <CardFooter className="flex flex-col gap-2 border-t p-4">
-            {flow === "signIn" && (
-              <p className="text-sm text-muted-foreground text-center">
-                Don't have an account?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signUp")}>
-                  Sign Up
-                </Button>
-              </p>
-            )}
-            {flow === "signUp" && (
-              <p className="text-sm text-muted-foreground text-center">
-                Already have an account?{" "}
-                <Button variant="link" className="p-0 h-auto font-semibold text-primary" onClick={() => setFlow("signIn")}>
-                  Sign In
-                </Button>
-              </p>
-            )}
-            {flow === "verify" && (
-               <Button variant="ghost" className="w-full" onClick={() => setFlow("signUp")}>
-                 Back to Sign Up
-               </Button>
-            )}
-            {flow === "forgotPassword" && (
-               <Button variant="ghost" className="w-full" onClick={() => setFlow("signIn")}>
-                 Back to Sign In
-               </Button>
-            )}
-          </CardFooter>
-        </Card>
+      </div>
+      <div className="flex flex-col justify-center p-8 md:p-16 bg-muted">
+        <div className="w-full max-w-md mx-auto space-y-8">
+          <div className="flex items-center gap-2 font-bold text-2xl text-primary mb-8">
+            <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-8 w-8 object-contain" />
+            Health Companion
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="name@example.com" 
+                className="pl-9" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required 
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="password">Password</Label>
+              <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setFlow("forgotPassword")}>
+                Forgot password?
+              </Button>
+            </div>
+            <div className="relative">
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                id="password" 
+                type="password" 
+                className="pl-9" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required 
+              />
+            </div>
+          </div>
+          {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+          </Button>
+        </div>
       </div>
     </div>
   );
