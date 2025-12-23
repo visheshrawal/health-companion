@@ -70,7 +70,7 @@ export function BookAppointmentDialog({
   const onBookClick = () => {
     handleBook({
       patientDescription: bookingReason,
-      aiEnhancedSummary: aiSummary,
+      aiEnhancedSummary: aiSummary || undefined,
       showOriginalToDoctor: showOriginal,
       symptomSeverity: aiData?.symptomSeverity,
       suggestedPriority: aiData?.suggestedPriority

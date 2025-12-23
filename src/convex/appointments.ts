@@ -186,6 +186,11 @@ export const create = mutation({
     doctorId: v.id("users"),
     date: v.number(),
     notes: v.optional(v.string()),
+    patientDescription: v.optional(v.string()),
+    aiEnhancedSummary: v.optional(v.string()),
+    showOriginalToDoctor: v.optional(v.boolean()),
+    symptomSeverity: v.optional(v.string()),
+    suggestedPriority: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const patientId = await getAuthUserId(ctx);
@@ -198,6 +203,11 @@ export const create = mutation({
       status: "scheduled",
       notes: args.notes,
       priority: "low",
+      patientDescription: args.patientDescription,
+      aiEnhancedSummary: args.aiEnhancedSummary,
+      showOriginalToDoctor: args.showOriginalToDoctor,
+      symptomSeverity: args.symptomSeverity,
+      suggestedPriority: args.suggestedPriority,
     });
 
     return appointmentId;
