@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, User, Stethoscope, LogOut, CheckCircle2 } from "lucide-react";
-import { PatientLayout } from "@/components/PatientNav";
 
 interface ProfileEditProps {
   user: any;
@@ -43,17 +42,17 @@ export function ProfileEdit({
   specialization, setSpecialization, license, setLicense, affiliation, setAffiliation, bio, setBio
 }: ProfileEditProps) {
   
-  const content = (
-    <div className={`min-h-screen bg-background flex items-center justify-center p-4 relative ${user.role === "patient" ? "bg-transparent min-h-full" : ""}`}>
+  return (
+    <div className="w-full max-w-2xl mx-auto relative">
       {user.role !== "patient" && (
-        <div className="absolute top-4 right-4">
+        <div className="absolute top-4 right-4 z-10">
           <Button variant="outline" onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" /> Sign Out
           </Button>
         </div>
       )}
       
-      <Card className="w-full max-w-2xl glass">
+      <Card className="w-full glass">
         <CardHeader>
           <div className="flex items-center justify-between mb-4">
             <div className="flex gap-2">
@@ -221,9 +220,4 @@ export function ProfileEdit({
       </Card>
     </div>
   );
-
-  if (user.role === "patient") {
-    return <PatientLayout>{content}</PatientLayout>;
-  }
-  return content;
 }

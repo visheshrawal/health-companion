@@ -14,6 +14,7 @@ import { MedicalRecords } from "@/components/profile/MedicalRecords";
 import { Achievements } from "@/components/profile/Achievements";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, FileText, Settings, Trophy } from "lucide-react";
+import { PatientLayout } from "@/components/PatientNav";
 
 export default function Profile() {
   const user = useQuery(api.users.currentUser);
@@ -242,113 +243,123 @@ export default function Profile() {
 
   // Read-Only View
   if (user?.profileCompleted && !isEditing) {
-    return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <div className="container max-w-4xl mx-auto p-4 md:p-8 space-y-8">
-          <Tabs defaultValue="view" className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger value="view" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Profile</span>
-              </TabsTrigger>
-              <TabsTrigger value="records" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Records</span>
-              </TabsTrigger>
-              <TabsTrigger value="achievements" className="flex items-center gap-2">
-                <Trophy className="h-4 w-4" />
-                <span className="hidden sm:inline">Badges</span>
-              </TabsTrigger>
-              <TabsTrigger value="edit" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Settings</span>
-              </TabsTrigger>
-            </TabsList>
+    const content = (
+      <div className="container max-w-4xl mx-auto p-4 md:p-8 space-y-8">
+        <Tabs defaultValue="view" className="w-full">
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="view" className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="records" className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Records</span>
+            </TabsTrigger>
+            <TabsTrigger value="achievements" className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              <span className="hidden sm:inline">Badges</span>
+            </TabsTrigger>
+            <TabsTrigger value="edit" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
+          </TabsList>
 
-            <TabsContent value="view" className="mt-6">
-              <ProfileView 
-                user={user} 
-                setIsEditing={setIsEditing}
-                handleResetData={handleResetData}
-                handleSignOut={handleSignOut}
-                fileInputRef={fileInputRef}
-                onFileSelect={onFileSelect}
-                isLoading={isLoading}
-              />
-            </TabsContent>
+          <TabsContent value="view" className="mt-6">
+            <ProfileView 
+              user={user} 
+              setIsEditing={setIsEditing}
+              handleResetData={handleResetData}
+              handleSignOut={handleSignOut}
+              fileInputRef={fileInputRef}
+              onFileSelect={onFileSelect}
+              isLoading={isLoading}
+            />
+          </TabsContent>
 
-            <TabsContent value="records" className="mt-6">
-              <MedicalRecords 
-                medicalRecords={medicalRecords || []}
-                recordInputRef={recordInputRef}
-                handleRecordUpload={handleRecordUpload}
-                removeMedicalRecord={removeMedicalRecord}
-              />
-            </TabsContent>
-            
-            <TabsContent value="achievements" className="mt-6">
-              <Achievements />
-            </TabsContent>
+          <TabsContent value="records" className="mt-6">
+            <MedicalRecords 
+              medicalRecords={medicalRecords || []}
+              recordInputRef={recordInputRef}
+              handleRecordUpload={handleRecordUpload}
+              removeMedicalRecord={removeMedicalRecord}
+            />
+          </TabsContent>
+          
+          <TabsContent value="achievements" className="mt-6">
+            <Achievements />
+          </TabsContent>
 
-            <TabsContent value="edit" className="mt-6">
-              <ProfileEdit 
-                user={user}
-                step={step}
-                setStep={setStep}
-                role={role}
-                setRole={setRole}
-                name={name}
-                setName={setName}
-                isLoading={isLoading}
-                handleStep1Submit={handleStep1Submit}
-                handleStep2Submit={handleStep2Submit}
-                handleSignOut={handleSignOut}
-                dob={dob} setDob={setDob}
-                sex={sex} setSex={setSex}
-                bloodGroup={bloodGroup} setBloodGroup={setBloodGroup}
-                conditions={conditions} setConditions={setConditions}
-                allergies={allergies} setAllergies={setAllergies}
-                emergencyName={emergencyName} setEmergencyName={setEmergencyName}
-                emergencyPhone={emergencyPhone} setEmergencyPhone={setEmergencyPhone}
-                emergencyEmail={emergencyEmail} setEmergencyEmail={setEmergencyEmail}
-                specialization={specialization} setSpecialization={setSpecialization}
-                license={license} setLicense={setLicense}
-                affiliation={affiliation} setAffiliation={setAffiliation}
-                bio={bio} setBio={setBio}
-              />
-            </TabsContent>
-          </Tabs>
-        </div>
+          <TabsContent value="edit" className="mt-6">
+            <ProfileEdit 
+              user={user}
+              step={step}
+              setStep={setStep}
+              role={role}
+              setRole={setRole}
+              name={name}
+              setName={setName}
+              isLoading={isLoading}
+              handleStep1Submit={handleStep1Submit}
+              handleStep2Submit={handleStep2Submit}
+              handleSignOut={handleSignOut}
+              dob={dob} setDob={setDob}
+              sex={sex} setSex={setSex}
+              bloodGroup={bloodGroup} setBloodGroup={setBloodGroup}
+              conditions={conditions} setConditions={setConditions}
+              allergies={allergies} setAllergies={setAllergies}
+              emergencyName={emergencyName} setEmergencyName={setEmergencyName}
+              emergencyPhone={emergencyPhone} setEmergencyPhone={setEmergencyPhone}
+              emergencyEmail={emergencyEmail} setEmergencyEmail={setEmergencyEmail}
+              specialization={specialization} setSpecialization={setSpecialization}
+              license={license} setLicense={setLicense}
+              affiliation={affiliation} setAffiliation={setAffiliation}
+              bio={bio} setBio={setBio}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     );
+
+    if (user.role === "patient") {
+      return <PatientLayout>{content}</PatientLayout>;
+    }
+    return <div className="min-h-screen bg-background pb-20 md:pb-0">{content}</div>;
   }
 
   // Edit/Onboarding View
-  return (
-    <ProfileEdit 
-      user={user}
-      step={step}
-      setStep={setStep}
-      role={role}
-      setRole={setRole}
-      name={name}
-      setName={setName}
-      isLoading={isLoading}
-      handleStep1Submit={handleStep1Submit}
-      handleStep2Submit={handleStep2Submit}
-      handleSignOut={handleSignOut}
-      dob={dob} setDob={setDob}
-      sex={sex} setSex={setSex}
-      bloodGroup={bloodGroup} setBloodGroup={setBloodGroup}
-      conditions={conditions} setConditions={setConditions}
-      allergies={allergies} setAllergies={setAllergies}
-      emergencyName={emergencyName} setEmergencyName={setEmergencyName}
-      emergencyPhone={emergencyPhone} setEmergencyPhone={setEmergencyPhone}
-      emergencyEmail={emergencyEmail} setEmergencyEmail={setEmergencyEmail}
-      specialization={specialization} setSpecialization={setSpecialization}
-      license={license} setLicense={setLicense}
-      affiliation={affiliation} setAffiliation={setAffiliation}
-      bio={bio} setBio={setBio}
-    />
+  const editContent = (
+    <div className="flex items-center justify-center min-h-[calc(100vh-4rem)] p-4">
+      <ProfileEdit 
+        user={user}
+        step={step}
+        setStep={setStep}
+        role={role}
+        setRole={setRole}
+        name={name}
+        setName={setName}
+        isLoading={isLoading}
+        handleStep1Submit={handleStep1Submit}
+        handleStep2Submit={handleStep2Submit}
+        handleSignOut={handleSignOut}
+        dob={dob} setDob={setDob}
+        sex={sex} setSex={setSex}
+        bloodGroup={bloodGroup} setBloodGroup={setBloodGroup}
+        conditions={conditions} setConditions={setConditions}
+        allergies={allergies} setAllergies={setAllergies}
+        emergencyName={emergencyName} setEmergencyName={setEmergencyName}
+        emergencyPhone={emergencyPhone} setEmergencyPhone={setEmergencyPhone}
+        emergencyEmail={emergencyEmail} setEmergencyEmail={setEmergencyEmail}
+        specialization={specialization} setSpecialization={setSpecialization}
+        license={license} setLicense={setLicense}
+        affiliation={affiliation} setAffiliation={setAffiliation}
+        bio={bio} setBio={setBio}
+      />
+    </div>
   );
+
+  if (user.role === "patient") {
+    return <PatientLayout>{editContent}</PatientLayout>;
+  }
+  return <div className="min-h-screen bg-background">{editContent}</div>;
 }
