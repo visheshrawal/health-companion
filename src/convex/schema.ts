@@ -124,6 +124,7 @@ const schema = defineSchema(
       patientId: v.id("users"),
       appointmentId: v.id("appointments"),
       notes: v.optional(v.string()),
+      followUpRequired: v.optional(v.boolean()),
       medications: v.array(v.object({
         name: v.string(),
         duration: v.number(),

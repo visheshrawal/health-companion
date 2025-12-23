@@ -25,6 +25,7 @@ export default function AppointmentDetail() {
   const processRecording = useAction(api.ai.processConsultationRecording);
 
   const [isPrescribing, setIsPrescribing] = useState(false);
+  const [followUpRequired, setFollowUpRequired] = useState(false);
   const [medications, setMedications] = useState<any[]>([
     { 
       name: "", 
@@ -200,6 +201,7 @@ export default function AppointmentDetail() {
         appointmentId: appointment._id,
         medications: formattedMeds,
         notes: "Prescription created via dashboard",
+        followUpRequired,
       });
       toast.success("Prescription saved successfully");
       setIsPrescribing(false);
@@ -266,7 +268,8 @@ export default function AppointmentDetail() {
                           <div className="space-y-2">
                             <Label>Duration (Days)</Label>
                             <Input 
-                              type="number" 
+                              type="number"
+                              min="1"
                               value={med.duration}
                               onChange={(e) => updateMedication(index, "duration", e.target.value)}
                             />
@@ -348,6 +351,15 @@ export default function AppointmentDetail() {
                   <Button variant="outline" onClick={handleAddMedication} className="w-full border-dashed">
                     <Plus className="mr-2 h-4 w-4" /> Add Another Medicine
                   </Button>
+
+                  <div className="flex items-center space-x-2 pt-4 border-t">
+                    <Checkbox 
+                      id="follow-up" 
+                      checked={followUpRequired}
+                      onCheckedChange={(c) => setFollowUpRequired(c as boolean)}
+                    />
+                    <Label htmlFor="follow-up" className="cursor-pointer">Follow-up required after dosage ends</Label>
+                  </div>
                 </div>
 
                 <DialogFooter>
