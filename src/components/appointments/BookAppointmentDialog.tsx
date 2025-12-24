@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
+import { useDemoMode, DEMO_DOCTORS } from "@/lib/demo";
 
 interface BookAppointmentDialogProps {
   open: boolean;
@@ -42,6 +43,7 @@ export function BookAppointmentDialog({
   slots,
   handleBook
 }: BookAppointmentDialogProps) {
+  const { isDemoMode } = useDemoMode();
   const [useAI, setUseAI] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
@@ -77,6 +79,8 @@ export function BookAppointmentDialog({
     });
   };
 
+  const displayDoctors = isDemoMode ? [...(doctors || []), ...DEMO_DOCTORS] : (doctors || []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
@@ -89,14 +93,21 @@ export function BookAppointmentDialog({
 
         {!selectedDoctor ? (
           <div className="grid gap-4 py-4">
-            {doctors?.map((doc) => (
+            {displayDoctors.map((doc) => (
               <div key={doc._id} className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => setSelectedDoctor(doc)}>
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                    {doc.name?.[0]}
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold overflow-hidden">
+                    {doc.imageUrl ? (
+                      <img src={doc.imageUrl} alt={doc.name} className="h-full w-full object-cover" />
+                    ) : (
+                      doc.name?.[0]
+                    )}
                   </div>
                   <div>
-                    <h3 className="font-semibold">Dr. {doc.name}</h3>
+                    <h3 className="font-semibold">
+                      Dr. {doc.name} 
+                      {doc._id.toString().startsWith('demo_') && <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full">Demo</span>}
+                    </h3>
                     <p className="text-sm text-muted-foreground">{doc.doctorProfile?.specialization || "General Practice"}</p>
                     <p className="text-xs text-muted-foreground">{doc.doctorProfile?.affiliation}</p>
                   </div>
@@ -104,7 +115,7 @@ export function BookAppointmentDialog({
                 <Button variant="ghost" size="sm"><ArrowRight className="h-4 w-4" /></Button>
               </div>
             ))}
-            {doctors?.length === 0 && <p className="text-center text-muted-foreground">No doctors found.</p>}
+            {displayDoctors.length === 0 && <p className="text-center text-muted-foreground">No doctors found.</p>}
           </div>
         ) : (
           <div className="flex flex-col gap-6 py-4">
@@ -141,29 +152,47 @@ export function BookAppointmentDialog({
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2 max-h-[300px] overflow-y-auto pr-2">
-                    {slots ? (
-                      slots.length > 0 ? (
-                        slots.map((slot: any) => (
+                    {selectedDoctor._id.toString().startsWith('demo_') ? (
+                      // Demo slots
+                      [9, 10, 11, 14, 15, 16].map(hour => {
+                        const date = new Date(selectedDate);
+                        date.setHours(hour, 0, 0, 0);
+                        return (
                           <Button
-                            key={slot.date}
-                            variant={selectedSlot === slot.date ? "default" : "outline"}
-                            className={`
-                              w-full text-xs h-9
-                              ${!slot.available ? "opacity-50 cursor-not-allowed bg-muted" : ""}
-                            `}
-                            disabled={!slot.available}
-                            onClick={() => setSelectedSlot(slot.date)}
+                            key={date.getTime()}
+                            variant={selectedSlot === date.getTime() ? "default" : "outline"}
+                            className="w-full text-xs h-9"
+                            onClick={() => setSelectedSlot(date.getTime())}
                           >
-                            {format(slot.date, "h:mm a")}
+                            {format(date, "h:mm a")}
                           </Button>
-                        ))
-                      ) : (
-                        <div className="col-span-3 text-center py-12 text-muted-foreground border rounded-lg border-dashed">
-                          No slots available on this date.
-                        </div>
-                      )
+                        );
+                      })
                     ) : (
-                      <div className="col-span-3 text-center py-12">Loading slots...</div>
+                      slots ? (
+                        slots.length > 0 ? (
+                          slots.map((slot: any) => (
+                            <Button
+                              key={slot.date}
+                              variant={selectedSlot === slot.date ? "default" : "outline"}
+                              className={`
+                                w-full text-xs h-9
+                                ${!slot.available ? "opacity-50 cursor-not-allowed bg-muted" : ""}
+                              `}
+                              disabled={!slot.available}
+                              onClick={() => setSelectedSlot(slot.date)}
+                            >
+                              {format(slot.date, "h:mm a")}
+                            </Button>
+                          ))
+                        ) : (
+                          <div className="col-span-3 text-center py-12 text-muted-foreground border rounded-lg border-dashed">
+                            No slots available on this date.
+                          </div>
+                        )
+                      ) : (
+                        <div className="col-span-3 text-center py-12">Loading slots...</div>
+                      )
                     )}
                   </div>
                 )}

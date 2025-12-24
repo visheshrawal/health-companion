@@ -17,6 +17,7 @@ import { useState, useEffect } from "react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useDemoMode, DEMO_APPOINTMENTS } from "@/lib/demo";
 
 // Sortable Item Component
 function SortableAppointmentItem({ apt, handlePriorityChange }: { apt: any, handlePriorityChange: any }) {
@@ -98,6 +99,8 @@ export default function DoctorHome() {
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
   
+  const { isDemoMode, toggleDemoMode } = useDemoMode();
+  
   const [suggestingId, setSuggestingId] = useState<string | null>(null);
   const [suggestedDate, setSuggestedDate] = useState<string>("");
   const [showHighPriorityOnly, setShowHighPriorityOnly] = useState(false);
@@ -119,9 +122,13 @@ export default function DoctorHome() {
 
   useEffect(() => {
     if (appointments) {
-      setLocalAppointments(appointments);
+      if (isDemoMode) {
+        setLocalAppointments([...appointments, ...DEMO_APPOINTMENTS]);
+      } else {
+        setLocalAppointments(appointments);
+      }
     }
-  }, [appointments]);
+  }, [appointments, isDemoMode]);
 
   const toggleDay = (day: string) => {
     if (availDays.includes(day)) {
@@ -173,12 +180,18 @@ export default function DoctorHome() {
         const newIndex = items.findIndex((item) => item._id === over.id);
         const newItems = arrayMove(items, oldIndex, newIndex);
         
-        // Update order in backend
-        const updates = newItems.map((item: any, index: number) => ({
-          id: item._id,
-          order: index,
-        }));
-        updateOrder({ updates });
+        // Update order in backend only for real appointments
+        if (!active.id.toString().startsWith('demo_')) {
+           const updates = newItems
+             .filter((item: any) => !item._id.toString().startsWith('demo_'))
+             .map((item: any, index: number) => ({
+               id: item._id,
+               order: index,
+             }));
+           if (updates.length > 0) {
+             updateOrder({ updates });
+           }
+        }
         
         return newItems;
       });
@@ -205,6 +218,11 @@ export default function DoctorHome() {
   };
 
   const handlePriorityChange = async (aptId: any, priority: "high" | "medium" | "low") => {
+    if (aptId.toString().startsWith('demo_')) {
+      toast.success(`(Demo) Priority updated to ${priority}`);
+      setLocalAppointments(prev => prev.map(a => a._id === aptId ? { ...a, priority } : a));
+      return;
+    }
     try {
       await updatePriority({ appointmentId: aptId, priority });
       toast.success(`Priority updated to ${priority}`);
@@ -218,11 +236,11 @@ export default function DoctorHome() {
   }
 
   const today = new Date();
-  const todaysAppointments = appointments?.filter(apt => 
+  const todaysAppointments = localAppointments?.filter(apt => 
     new Date(apt.date).toDateString() === today.toDateString()
   ) || [];
 
-  const rescheduleRequests = appointments?.filter(apt => apt.rescheduleRequest?.status === "pending") || [];
+  const rescheduleRequests = localAppointments?.filter(apt => apt.rescheduleRequest?.status === "pending") || [];
 
   // Filter Appointments for display
   const filteredAppointments = (localAppointments || []).filter(apt => {
@@ -232,6 +250,11 @@ export default function DoctorHome() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
+      {isDemoMode && (
+        <div className="bg-yellow-100 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-2 text-center text-sm font-medium mb-4 rounded-lg">
+          🟡 Demo Mode: Showing simulated data alongside your real account
+        </div>
+      )}
       <div className="max-w-5xl mx-auto space-y-8">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -239,6 +262,14 @@ export default function DoctorHome() {
             <p className="text-muted-foreground">Welcome back to your dashboard.</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <div className="flex items-center space-x-2 mr-2 border-r pr-4">
+              <Switch 
+                id="demo-mode" 
+                checked={isDemoMode}
+                onCheckedChange={toggleDemoMode}
+              />
+              <Label htmlFor="demo-mode" className="cursor-pointer">Demo Mode</Label>
+            </div>
             <Button variant="outline" asChild>
               <Link to="/doctor/analysis">
                 <BarChart3 className="mr-2 h-4 w-4" /> Analysis
@@ -327,7 +358,7 @@ export default function DoctorHome() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {appointments?.filter(a => a.priority === 'high').length || 0}
+                {localAppointments?.filter(a => a.priority === 'high').length || 0}
               </div>
             </CardContent>
           </Card>

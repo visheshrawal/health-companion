@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils";
 import { NotificationsPopover } from "@/components/NotificationsPopover";
 import { SymptomChecker } from "@/components/SymptomChecker";
 import { Button } from "@/components/ui/button";
+import { useDemoMode } from "@/lib/demo";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export function PatientNav() {
   const location = useLocation();
@@ -50,14 +53,35 @@ export function PatientNav() {
 }
 
 export function PatientLayout({ children }: { children: React.ReactNode }) {
+  const { isDemoMode, toggleDemoMode } = useDemoMode();
+
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
+      {isDemoMode && (
+        <div className="bg-yellow-100 dark:bg-yellow-900/30 border-b border-yellow-200 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-2 text-center text-sm font-medium sticky top-0 z-50 md:hidden">
+          🟡 Demo Mode Active
+        </div>
+      )}
       <div className="md:flex">
         <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 border-r bg-card/50 backdrop-blur-xl p-6">
           <div className="flex items-center gap-2 mb-8">
             <img src="https://harmless-tapir-303.convex.cloud/api/storage/3fe1a561-c673-435a-a446-70cf0fae959d" alt="Health Companion" className="h-8 w-8 object-contain" />
             <span className="font-bold text-xl">Health Companion</span>
           </div>
+          
+          <div className="mb-6 px-4 py-3 bg-muted/50 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="demo-mode-sidebar" className="text-sm font-medium cursor-pointer">Demo Mode</Label>
+              <Switch 
+                id="demo-mode-sidebar" 
+                checked={isDemoMode}
+                onCheckedChange={toggleDemoMode}
+                className="scale-75"
+              />
+            </div>
+            {isDemoMode && <p className="text-[10px] text-muted-foreground mt-2">Showing simulated data</p>}
+          </div>
+
           <nav className="space-y-2 flex-1">
             <Link to="/patient" className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-accent text-foreground/80 hover:text-foreground transition-colors">
               <Home className="h-5 w-5" />
