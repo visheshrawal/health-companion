@@ -237,44 +237,131 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             Health Companion
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="name@example.com" 
-                className="pl-9" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-              />
-            </div>
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {flow === "signIn" && "Welcome back"}
+              {flow === "signUp" && "Create an account"}
+              {flow === "verify" && "Verify your email"}
+              {flow === "forgotPassword" && "Reset password"}
+              {flow === "resetPassword" && "Set new password"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {flow === "signIn" && "Enter your credentials to access your account"}
+              {flow === "signUp" && "Enter your details to get started"}
+              {flow === "verify" && "Enter the code sent to your email"}
+              {flow === "forgotPassword" && "Enter your email to receive a reset code"}
+              {flow === "resetPassword" && "Enter the code and your new password"}
+            </p>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
-              <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setFlow("forgotPassword")}>
-                Forgot password?
-              </Button>
-            </div>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                id="password" 
-                type="password" 
-                className="pl-9" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-              />
-            </div>
-          </div>
-          {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
-          <Button type="submit" className="w-full" disabled={isLoading} onClick={flow === "signIn" ? handleSignIn : handleSignUp}>
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (flow === "signIn" ? "Sign In" : "Sign Up")}
-          </Button>
+
+          <form className="space-y-4" onSubmit={(e) => {
+            e.preventDefault();
+            if (flow === "signIn") handleSignIn(e);
+            else if (flow === "signUp") handleSignUp(e);
+            else if (flow === "verify") handleVerify(e);
+            else if (flow === "forgotPassword") handleForgotPassword(e);
+            else if (flow === "resetPassword") handleResetPassword(e);
+          }}>
+            {/* Email Input - Hidden during verify/resetPassword if we want to keep it clean, but usually good to show what email is being used. 
+                However, for resetPassword flow, we need email. For verify, we need email. 
+                Let's keep it visible but disabled for verify/resetPassword to avoid confusion. */}
+            {(flow === "signIn" || flow === "signUp" || flow === "forgotPassword") && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="name@example.com" 
+                    className="pl-9" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required 
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* OTP Input */}
+            {(flow === "verify" || flow === "resetPassword") && (
+              <div className="space-y-2">
+                <Label htmlFor="otp">Verification Code</Label>
+                <div className="flex justify-center">
+                  <InputOTP maxLength={6} value={otp} onChange={(value) => setOtp(value)}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                    </InputOTPGroup>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <p className="text-xs text-center text-muted-foreground">
+                  Check your email for the 6-digit code
+                </p>
+              </div>
+            )}
+
+            {/* Password Input */}
+            {(flow === "signIn" || flow === "signUp" || flow === "resetPassword") && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">{flow === "resetPassword" ? "New Password" : "Password"}</Label>
+                  {flow === "signIn" && (
+                    <Button variant="link" className="p-0 h-auto text-xs" type="button" onClick={() => setFlow("forgotPassword")}>
+                      Forgot password?
+                    </Button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    className="pl-9" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required 
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Confirm Password Input */}
+            {(flow === "signUp" || flow === "resetPassword") && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    id="confirmPassword" 
+                    type="password" 
+                    className="pl-9" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required 
+                  />
+                </div>
+              </div>
+            )}
+
+            {error && <div className="text-sm text-destructive flex items-center gap-2"><AlertCircle className="h-4 w-4" /> {error}</div>}
+            
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                flow === "signIn" ? "Sign In" : 
+                flow === "signUp" ? "Sign Up" : 
+                flow === "verify" ? "Verify Email" : 
+                flow === "forgotPassword" ? "Send Reset Code" : 
+                "Reset Password"
+              )}
+            </Button>
+          </form>
           
           <div className="text-center text-sm">
             {flow === "signIn" ? (
@@ -287,7 +374,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             ) : (
               <>
                 Already have an account?{" "}
-                <Button variant="link" className="p-0 h-auto" onClick={() => setFlow("signIn")}>
+                <Button variant="link" className="p-0 h-auto" onClick={() => {
+                  setFlow("signIn");
+                  setError(null);
+                }}>
                   Sign in
                 </Button>
               </>
