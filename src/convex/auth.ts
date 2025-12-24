@@ -2,6 +2,7 @@ import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
 import { MutationCtx } from "./_generated/server";
+import { ConvexError } from "convex/values";
 
 async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
   console.log(`Sending verification code to ${email}`);
@@ -9,7 +10,7 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
     const apiKey = process.env.VLY_INTEGRATION_KEY;
     if (!apiKey) {
       console.error("VLY_INTEGRATION_KEY is not set in environment variables");
-      throw new Error("Server configuration error: Missing email API key");
+      throw new ConvexError("Server configuration error: Missing email API key");
     }
 
     const response = await fetch("https://email.vly.ai/send_otp", {
@@ -26,11 +27,12 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to send OTP: ${await response.text()}`);
+      throw new ConvexError(`Failed to send OTP: ${await response.text()}`);
     }
   } catch (error) {
     console.error("Failed to send verification email:", error);
-    throw new Error("Failed to send verification email. Please try again.");
+    if (error instanceof ConvexError) throw error;
+    throw new ConvexError("Failed to send verification email. Please try again.");
   }
 }
 
@@ -80,7 +82,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         const email = args.profile.email as string | undefined;
 
         if (!email) {
-          throw new Error("Email is required for user creation");
+          throw new ConvexError("Email is required for user creation");
         }
 
         // Check if user with this email already exists to prevent duplicates
@@ -108,7 +110,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         console.error("Failed to create user in database:", error);
         // Throwing a new error here might mask the original one in client, 
         // but logging it on server is crucial.
-        throw new Error(`Failed to create user profile: ${error instanceof Error ? error.message : String(error)}`);
+        if (error instanceof ConvexError) throw error;
+        throw new ConvexError(`Failed to create user profile: ${error instanceof Error ? error.message : String(error)}`);
       }
     },
   },
