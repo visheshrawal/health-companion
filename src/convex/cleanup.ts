@@ -53,6 +53,40 @@ export const removeDuplicateUsers = internalMutation({
   },
 });
 
+export const cleanupOrphanedAuthRecords = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    // Clean up orphaned accounts (users that were deleted but still have auth records)
+    // Use "as any" to bypass strict typing if auth tables aren't fully generated in DataModel yet
+    const accounts = await ctx.db.query("authAccounts" as any).collect();
+    let deletedAccounts = 0;
+    for (const account of accounts) {
+      const user = await ctx.db.get(account.userId);
+      if (!user) {
+        await ctx.db.delete(account._id);
+        deletedAccounts++;
+      }
+    }
+
+    // Clean up orphaned sessions
+    const sessions = await ctx.db.query("authSessions" as any).collect();
+    let deletedSessions = 0;
+    for (const session of sessions) {
+      const user = await ctx.db.get(session.userId);
+      if (!user) {
+        await ctx.db.delete(session._id);
+        deletedSessions++;
+      }
+    }
+
+    return {
+      deletedAccounts,
+      deletedSessions,
+      message: `Cleaned up ${deletedAccounts} orphaned accounts and ${deletedSessions} orphaned sessions.`
+    };
+  },
+});
+
 export const resetAccountData = mutation({
   args: {},
   handler: async (ctx) => {
