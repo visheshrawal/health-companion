@@ -95,7 +95,7 @@ export const getCompletedAppointments = query({
     const userRecord = await ctx.db
       .query("users")
       .withIndex("email", (q) => q.eq("email", user.email!))
-      .unique();
+      .first(); // Changed from .unique() to .first() to prevent crashes if duplicates exist
       
     if (!userRecord) return [];
     
