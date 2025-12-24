@@ -99,11 +99,9 @@ export default function PatientAppointments() {
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-primary" /> Upcoming Visits
             </h2>
-            {upcomingAppointments.length > 0 && (
-              <Button onClick={() => setIsBooking(true)} size="sm">
-                <Plus className="mr-2 h-4 w-4" /> Book Appointment
-              </Button>
-            )}
+            <Button onClick={() => setIsBooking(true)} size="sm">
+              <Plus className="mr-2 h-4 w-4" /> Book Appointment
+            </Button>
           </div>
           
           <BookAppointmentDialog 
