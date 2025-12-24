@@ -23,6 +23,7 @@ import type * as medicalRecords from "../medicalRecords.js";
 import type * as medications from "../medications.js";
 import type * as notifications from "../notifications.js";
 import type * as prescriptions from "../prescriptions.js";
+import type * as reset_test_user from "../reset_test_user.js";
 import type * as sos from "../sos.js";
 import type * as sosLogs from "../sosLogs.js";
 import type * as test_auth from "../test_auth.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   medications: typeof medications;
   notifications: typeof notifications;
   prescriptions: typeof prescriptions;
+  reset_test_user: typeof reset_test_user;
   sos: typeof sos;
   sosLogs: typeof sosLogs;
   test_auth: typeof test_auth;
