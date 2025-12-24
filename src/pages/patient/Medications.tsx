@@ -9,8 +9,9 @@ import { Flame, Sun, Moon, Pill, CheckCircle, Clock, CalendarDays, TrendingUp, T
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AdherenceCalendar } from "@/components/medications/AdherenceCalendar";
-import { useDemoMode } from "@/lib/demo";
+import { useDemoMode, DEMO_MEDICATIONS } from "@/lib/demo";
 import { DemoMedications } from "@/components/medications/DemoMedications";
+import { useState, useEffect } from "react";
 
 export default function PatientMedications() {
   const medications = useQuery(api.medications.list);
@@ -18,6 +19,26 @@ export default function PatientMedications() {
   const stats = useQuery(api.medications.getAdherenceStats);
   const toggleTaken = useMutation(api.medications.toggleTaken);
   const { isDemoMode } = useDemoMode();
+
+  // Demo State
+  const [demoMeds, setDemoMeds] = useState<any[]>(DEMO_MEDICATIONS);
+  const [demoStats, setDemoStats] = useState({
+    streak: 12,
+    monthlyAdherence: 85,
+    activeCount: 3
+  });
+
+  // Reset demo meds when entering demo mode
+  useEffect(() => {
+    if (isDemoMode) {
+      setDemoMeds(DEMO_MEDICATIONS);
+      setDemoStats({
+        streak: 12,
+        monthlyAdherence: 85,
+        activeCount: 3
+      });
+    }
+  }, [isDemoMode]);
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -35,10 +56,61 @@ export default function PatientMedications() {
     }
   };
 
-  const activeMeds = medications?.filter(m => m.active) || [];
-  const completedMeds = medications?.filter(m => !m.active) || [];
+  const handleDemoAction = (id: string, action: 'taken' | 'snoozed' | 'missed') => {
+    setDemoMeds(prev => prev.map(med => {
+      if (med._id === id) {
+        // Add to takenLog for calendar update
+        const newLog = {
+          date: today,
+          status: action === 'taken' ? 'taken' : 'missed', // simplified for calendar
+          time: 'morning' // simplified
+        };
+        
+        // Update streak if taken
+        const newStreak = action === 'taken' ? med.streak + 1 : 0;
+        
+        return {
+          ...med,
+          streak: newStreak,
+          takenLog: [...(med.takenLog || []), newLog],
+          // Mark as processed for today in UI (we filter these out in the view)
+          processedToday: true
+        };
+      }
+      return med;
+    }));
 
-  // Group active meds by time of day for "Today's Schedule"
+    // Update global demo stats
+    setDemoStats(prev => ({
+      ...prev,
+      streak: action === 'taken' ? prev.streak + 1 : prev.streak,
+      monthlyAdherence: action === 'taken' ? Math.min(100, prev.monthlyAdherence + 2) : Math.max(0, prev.monthlyAdherence - 5)
+    }));
+  };
+
+  const handleDemoReset = () => {
+    setDemoMeds(DEMO_MEDICATIONS);
+    setDemoStats({
+      streak: 12,
+      monthlyAdherence: 85,
+      activeCount: 3
+    });
+    toast.success("Demo data reset");
+  };
+
+  // Filter meds for display
+  const activeMeds = isDemoMode 
+    ? demoMeds.filter(m => m.active) 
+    : (medications?.filter(m => m.active) || []);
+    
+  const completedMeds = isDemoMode 
+    ? [] 
+    : (medications?.filter(m => !m.active) || []);
+
+  // For DemoMedications component, only show ones not processed today
+  const demoMedsToTake = demoMeds.filter(m => !m.processedToday);
+
+  // Group active meds by time of day for "Today's Schedule" (Real Mode)
   const getMedsForTime = (timeSlot: string) => {
     return activeMeds.filter(med => 
       med.schedule?.some((s: any) => s.time === timeSlot)
@@ -50,10 +122,15 @@ export default function PatientMedications() {
   const nightMeds = getMedsForTime("night");
 
   const isTaken = (med: any, timeSlot: string) => {
-    return med.takenLog.some((log: any) => 
+    return med.takenLog?.some((log: any) => 
       typeof log !== 'string' && log.date === today && log.time === timeSlot && log.status === 'taken'
     );
   };
+
+  // Display Values
+  const displayStreak = isDemoMode ? demoStats.streak : (streak || 0);
+  const displayAdherence = isDemoMode ? demoStats.monthlyAdherence : (stats?.monthlyAdherence || 0);
+  const displayActiveCount = activeMeds.length;
 
   return (
     <PatientLayout>
@@ -65,14 +142,20 @@ export default function PatientMedications() {
           </div>
         </div>
 
-        {isDemoMode && <DemoMedications />}
+        {isDemoMode && (
+          <DemoMedications 
+            medications={demoMedsToTake} 
+            onAction={handleDemoAction}
+            onReset={handleDemoReset}
+          />
+        )}
 
         {/* Adherence Calendar */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary" /> Weekly Adherence
           </h2>
-          <AdherenceCalendar medications={medications || []} />
+          <AdherenceCalendar medications={isDemoMode ? demoMeds : (medications || [])} />
         </div>
 
         {/* Progress & Stats */}
@@ -84,7 +167,7 @@ export default function PatientMedications() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Current Streak</p>
-                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{streak || 0} Days</p>
+                <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{displayStreak} Days</p>
                 <p className="text-xs text-muted-foreground">Keep it up!</p>
               </div>
             </CardContent>
@@ -97,7 +180,7 @@ export default function PatientMedications() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Monthly Adherence</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats?.monthlyAdherence || 0}%</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{displayAdherence}%</p>
                 <p className="text-xs text-muted-foreground">Last 30 days</p>
               </div>
             </CardContent>
@@ -110,186 +193,188 @@ export default function PatientMedications() {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active Meds</p>
-                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{activeMeds.length}</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{displayActiveCount}</p>
                 <p className="text-xs text-muted-foreground">Prescriptions</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Section A: Today's Schedule */}
-          <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" /> Today's Schedule
-            </h2>
-            
-            <div className="space-y-6">
-              {/* Morning */}
-              {morningMeds.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
-                    <Sun className="h-4 w-4" /> Morning
-                  </div>
-                  {morningMeds.map(med => {
-                    const schedule = med.schedule?.find((s: any) => s.time === "morning");
-                    const taken = isTaken(med, "morning");
-                    return (
-                      <Card key={`${med._id}-morning`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Checkbox 
-                              checked={taken}
-                              onCheckedChange={(checked) => handleTakeMed(med._id, "morning", checked ? "taken" : "missed")}
-                              className="h-6 w-6"
-                            />
-                            <div>
-                              <p className={`font-semibold ${taken ? 'line-through text-muted-foreground' : ''}`}>{med.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {schedule?.quantity} unit(s) • {schedule?.withFood}
-                              </p>
+        {!isDemoMode && (
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Section A: Today's Schedule */}
+            <div className="lg:col-span-2 space-y-6">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Clock className="h-5 w-5 text-primary" /> Today's Schedule
+              </h2>
+              
+              <div className="space-y-6">
+                {/* Morning */}
+                {morningMeds.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
+                      <Sun className="h-4 w-4" /> Morning
+                    </div>
+                    {morningMeds.map(med => {
+                      const schedule = med.schedule?.find((s: any) => s.time === "morning");
+                      const taken = isTaken(med, "morning");
+                      return (
+                        <Card key={`${med._id}-morning`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <Checkbox 
+                                checked={taken}
+                                onCheckedChange={(checked) => handleTakeMed(med._id, "morning", checked ? "taken" : "missed")}
+                                className="h-6 w-6"
+                              />
+                              <div>
+                                <p className={`font-semibold ${taken ? 'line-through text-muted-foreground' : ''}`}>{med.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {schedule?.quantity} unit(s) • {schedule?.withFood ? "With food" : "Empty stomach"}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Afternoon */}
-              {afternoonMeds.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
-                    <Sun className="h-4 w-4" /> Afternoon
+                            {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
-                  {afternoonMeds.map(med => {
-                    const schedule = med.schedule?.find((s: any) => s.time === "afternoon");
-                    const taken = isTaken(med, "afternoon");
-                    return (
-                      <Card key={`${med._id}-afternoon`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Checkbox 
-                              checked={taken}
-                              onCheckedChange={(checked) => handleTakeMed(med._id, "afternoon", checked ? "taken" : "missed")}
-                              className="h-6 w-6"
-                            />
-                            <div>
-                              <p className={`font-semibold ${taken ? 'line-through text-muted-foreground' : ''}`}>{med.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {schedule?.quantity} unit(s) • {schedule?.withFood}
-                              </p>
-                            </div>
-                          </div>
-                          {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
+                )}
 
-              {/* Night */}
-              {nightMeds.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
-                    <Moon className="h-4 w-4" /> Night
+                {/* Afternoon */}
+                {afternoonMeds.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
+                      <Sun className="h-4 w-4" /> Afternoon
+                    </div>
+                    {afternoonMeds.map(med => {
+                      const schedule = med.schedule?.find((s: any) => s.time === "afternoon");
+                      const taken = isTaken(med, "afternoon");
+                      return (
+                        <Card key={`${med._id}-afternoon`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <Checkbox 
+                                checked={taken}
+                                onCheckedChange={(checked) => handleTakeMed(med._id, "afternoon", checked ? "taken" : "missed")}
+                                className="h-6 w-6"
+                              />
+                              <div>
+                                <p className={`font-semibold ${taken ? 'line-through text-muted-foreground' : ''}`}>{med.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {schedule?.quantity} unit(s) • {schedule?.withFood ? "With food" : "Empty stomach"}
+                                </p>
+                              </div>
+                            </div>
+                            {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
-                  {nightMeds.map(med => {
-                    const schedule = med.schedule?.find((s: any) => s.time === "night");
-                    const taken = isTaken(med, "night");
-                    return (
-                      <Card key={`${med._id}-night`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
-                        <CardContent className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Checkbox 
-                              checked={taken}
-                              onCheckedChange={(checked) => handleTakeMed(med._id, "night", checked ? "taken" : "missed")}
-                              className="h-6 w-6"
-                            />
-                            <div>
-                              <p className={`font-semibold ${taken ? 'line-through text-muted-foreground' : ''}`}>{med.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {schedule?.quantity} unit(s) • {schedule?.withFood}
-                              </p>
-                            </div>
-                          </div>
-                          {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
+                )}
 
-              {activeMeds.length === 0 && (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
-                  No active medications scheduled for today.
-                </div>
-              )}
+                {/* Night */}
+                {nightMeds.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
+                      <Moon className="h-4 w-4" /> Night
+                    </div>
+                    {nightMeds.map(med => {
+                      const schedule = med.schedule?.find((s: any) => s.time === "night");
+                      const taken = isTaken(med, "night");
+                      return (
+                        <Card key={`${med._id}-night`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
+                          <CardContent className="p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <Checkbox 
+                                checked={taken}
+                                onCheckedChange={(checked) => handleTakeMed(med._id, "night", checked ? "taken" : "missed")}
+                                className="h-6 w-6"
+                              />
+                              <div>
+                                <p className={`font-semibold ${taken ? 'line-through text-muted-foreground' : ''}`}>{med.name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {schedule?.quantity} unit(s) • {schedule?.withFood ? "With food" : "Empty stomach"}
+                                </p>
+                              </div>
+                            </div>
+                            {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {activeMeds.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
+                    No active medications scheduled for today.
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Section B: All Medications List */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Pill className="h-5 w-5 text-primary" /> All Medications
-            </h2>
-            <Tabs defaultValue="active" className="w-full">
-              <TabsList className="w-full">
-                <TabsTrigger value="active" className="flex-1">Active</TabsTrigger>
-                <TabsTrigger value="completed" className="flex-1">Completed</TabsTrigger>
-              </TabsList>
-              <TabsContent value="active" className="space-y-4 mt-4">
-                {activeMeds.map(med => {
-                  const daysCompleted = Math.floor((Date.now() - med.startDate) / (1000 * 60 * 60 * 24));
-                  const totalDays = med.duration || 30;
-                  const progress = Math.min(100, Math.max(0, (daysCompleted / totalDays) * 100));
-                  
-                  return (
-                    <Card key={med._id} className="overflow-hidden">
-                      <CardContent className="p-4 space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold">{med.name}</h3>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                              {med.schedule?.map((s: any, i: number) => (
-                                <span key={i} className="text-xs bg-secondary px-2 py-1 rounded-md capitalize">
-                                  {s.time} ({s.withFood})
-                                </span>
-                              ))}
+            {/* Section B: All Medications List */}
+            <div className="space-y-6">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Pill className="h-5 w-5 text-primary" /> All Medications
+              </h2>
+              <Tabs defaultValue="active" className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="active" className="flex-1">Active</TabsTrigger>
+                  <TabsTrigger value="completed" className="flex-1">Completed</TabsTrigger>
+                </TabsList>
+                <TabsContent value="active" className="space-y-4 mt-4">
+                  {activeMeds.map(med => {
+                    const daysCompleted = Math.floor((Date.now() - med.startDate) / (1000 * 60 * 60 * 24));
+                    const totalDays = med.duration || 30;
+                    const progress = Math.min(100, Math.max(0, (daysCompleted / totalDays) * 100));
+                    
+                    return (
+                      <Card key={med._id} className="overflow-hidden">
+                        <CardContent className="p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold">{med.name}</h3>
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {med.schedule?.map((s: any, i: number) => (
+                                  <span key={i} className="text-xs bg-secondary px-2 py-1 rounded-md capitalize">
+                                    {s.time} ({s.withFood ? "With food" : "Empty stomach"})
+                                  </span>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-xs text-muted-foreground">
-                            <span>{daysCompleted} of {totalDays} days</span>
-                            <span>{Math.round(progress)}%</span>
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>{daysCompleted} of {totalDays} days</span>
+                              <span>{Math.round(progress)}%</span>
+                            </div>
+                            <Progress value={progress} className="h-2" />
                           </div>
-                          <Progress value={progress} className="h-2" />
-                        </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  {activeMeds.length === 0 && <p className="text-center text-muted-foreground py-4">No active medications.</p>}
+                </TabsContent>
+                <TabsContent value="completed" className="space-y-4 mt-4">
+                  {completedMeds.map(med => (
+                    <Card key={med._id} className="opacity-75">
+                      <CardContent className="p-4">
+                        <h3 className="font-semibold">{med.name}</h3>
+                        <p className="text-sm text-muted-foreground">Completed on {med.endDate ? format(med.endDate, "MMM d, yyyy") : "Unknown"}</p>
                       </CardContent>
                     </Card>
-                  );
-                })}
-                {activeMeds.length === 0 && <p className="text-center text-muted-foreground py-4">No active medications.</p>}
-              </TabsContent>
-              <TabsContent value="completed" className="space-y-4 mt-4">
-                {completedMeds.map(med => (
-                  <Card key={med._id} className="opacity-75">
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold">{med.name}</h3>
-                      <p className="text-sm text-muted-foreground">Completed on {med.endDate ? format(med.endDate, "MMM d, yyyy") : "Unknown"}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-                {completedMeds.length === 0 && <p className="text-center text-muted-foreground py-4">No completed medications.</p>}
-              </TabsContent>
-            </Tabs>
+                  ))}
+                  {completedMeds.length === 0 && <p className="text-center text-muted-foreground py-4">No completed medications.</p>}
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </PatientLayout>
   );

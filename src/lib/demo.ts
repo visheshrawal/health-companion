@@ -33,6 +33,24 @@ export const DEMO_DOCTORS = [
   }
 ];
 
+// Helper to generate past logs
+const generatePastLogs = (days: number, consistency: number) => {
+  const logs = [];
+  const today = new Date();
+  for (let i = 1; i <= days; i++) {
+    if (Math.random() < consistency) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      logs.push({
+        date: date.toISOString().split('T')[0],
+        status: 'taken',
+        time: 'morning'
+      });
+    }
+  }
+  return logs;
+};
+
 export const DEMO_MEDICATIONS = [
   {
     _id: "demo_med_1",
@@ -40,13 +58,16 @@ export const DEMO_MEDICATIONS = [
     dosage: "500mg",
     purpose: "Diabetes",
     instructions: "Take with food",
+    active: true,
+    duration: 30,
+    startDate: Date.now() - 30 * 24 * 60 * 60 * 1000, // 30 days ago
     schedule: [
-      { time: "morning", withFood: true },
-      { time: "evening", withFood: true }
+      { time: "morning", withFood: true, quantity: 1 },
+      { time: "evening", withFood: true, quantity: 1 }
     ],
     progress: { current: 15, total: 30 },
     streak: 7,
-    history: ["taken", "taken", "taken", "taken", "taken", "taken", "taken"]
+    takenLog: generatePastLogs(7, 1.0) // Perfect streak last 7 days
   },
   {
     _id: "demo_med_2",
@@ -54,12 +75,15 @@ export const DEMO_MEDICATIONS = [
     dosage: "20mg",
     purpose: "Cholesterol",
     instructions: "Take on empty stomach",
+    active: true,
+    duration: 90,
+    startDate: Date.now() - 60 * 24 * 60 * 60 * 1000,
     schedule: [
-      { time: "night", withFood: false }
+      { time: "night", withFood: false, quantity: 1 }
     ],
     progress: { current: 22, total: 90 },
     streak: 22,
-    history: ["taken", "taken", "taken", "taken", "taken", "taken", "taken"]
+    takenLog: generatePastLogs(22, 0.9)
   },
   {
     _id: "demo_med_3",
@@ -67,12 +91,15 @@ export const DEMO_MEDICATIONS = [
     dosage: "50mg",
     purpose: "Blood Pressure",
     instructions: "Take at any time",
+    active: true,
+    duration: 30,
+    startDate: Date.now() - 15 * 24 * 60 * 60 * 1000,
     schedule: [
-      { time: "morning", withFood: false }
+      { time: "morning", withFood: false, quantity: 1 }
     ],
     progress: { current: 8, total: 30 },
     streak: 8,
-    history: ["taken", "taken", "taken", "taken", "taken", "taken", "taken"]
+    takenLog: generatePastLogs(8, 0.8)
   }
 ];
 

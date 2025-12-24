@@ -2,14 +2,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Check, Clock, X, Flame, Plus, Info } from "lucide-react";
+import { Check, Clock, X, Flame, Plus } from "lucide-react";
 import { DEMO_MEDICATIONS } from "@/lib/demo";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export function DemoMedications() {
-  const [meds, setMeds] = useState(DEMO_MEDICATIONS);
+interface DemoMedicationsProps {
+  medications?: any[];
+  onAction?: (id: string, action: 'taken' | 'snoozed' | 'missed') => void;
+  onReset?: () => void;
+}
+
+export function DemoMedications({ medications, onAction, onReset }: DemoMedicationsProps) {
+  // If no props provided, use internal state (fallback/standalone mode)
+  const [internalMeds, setInternalMeds] = useState(DEMO_MEDICATIONS);
+  const meds = medications || internalMeds;
+  
   const [removing, setRemoving] = useState<Record<string, 'taken' | 'snoozed' | 'missed'>>({});
 
   const handleAction = (id: string, action: 'taken' | 'snoozed' | 'missed') => {
@@ -25,20 +34,39 @@ export function DemoMedications() {
       toast.error("Missed. Make sure to take it next time!");
     }
 
-    // 3. Remove from list after animation completes
+    // 3. Notify parent or update internal state after animation
     setTimeout(() => {
-      setMeds(prev => prev.filter(m => m._id !== id));
+      if (onAction) {
+        onAction(id, action);
+      } else {
+        setInternalMeds(prev => prev.filter(m => m._id !== id));
+      }
+      
       setRemoving(prev => {
         const next = { ...prev };
         delete next[id];
         return next;
       });
-    }, 600); // Slightly longer than transition to ensure smoothness
+    }, 600); 
+  };
+
+  const handleReset = () => {
+    if (onReset) {
+      onReset();
+    } else {
+      setInternalMeds(DEMO_MEDICATIONS);
+    }
   };
 
   const handleAdd = () => {
     toast.info("In real use, your doctor's prescriptions appear here automatically!");
   };
+
+  // Filter out meds that are already "done" for today in the demo view
+  // In the parent component, we might filter them out, but here we just render what we get.
+  // However, if we are using internal state, we filter.
+  // If using props, we assume the parent passes only what should be shown or we show all.
+  // Let's assume we show all passed meds.
 
   if (meds.length === 0) {
     return (
@@ -48,13 +76,13 @@ export function DemoMedications() {
             <h2 className="text-xl font-semibold">📦 Sample Medications</h2>
             <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">📱 Demo Data</Badge>
           </div>
-          <Button onClick={() => setMeds(DEMO_MEDICATIONS)} size="sm" variant="outline">
+          <Button onClick={handleReset} size="sm" variant="outline">
             <Plus className="mr-2 h-4 w-4" /> Reset Demo
           </Button>
         </div>
         <div className="text-center py-12 border-2 border-dashed rounded-xl bg-muted/10">
           <p className="text-muted-foreground">All demo medications processed for today!</p>
-          <Button variant="link" onClick={() => setMeds(DEMO_MEDICATIONS)}>Reset Demo Data</Button>
+          <Button variant="link" onClick={handleReset}>Reset Demo Data</Button>
         </div>
       </div>
     );
@@ -111,7 +139,7 @@ export function DemoMedications() {
                     <Clock className="h-3 w-3" /> Schedule
                   </p>
                   <ul className="mt-1 space-y-1 text-muted-foreground">
-                    {med.schedule.map((s, i) => (
+                    {med.schedule.map((s: any, i: number) => (
                       <li key={i} className="capitalize flex justify-between">
                         <span>{s.time}</span>
                         <span>{s.withFood ? "With food" : "Empty stomach"}</span>

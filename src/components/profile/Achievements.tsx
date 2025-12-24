@@ -6,6 +6,11 @@ import { Trophy, Medal, BookOpen, Shield, FileText, Lock, Users, Star, Stethosco
 import { Badge } from "@/components/ui/badge";
 import confetti from "canvas-confetti";
 import { useEffect, useRef } from "react";
+import { useDemoMode } from "@/lib/demo";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { useState } from "react";
 
 // Must match backend definitions
 const PATIENT_ACHIEVEMENTS_METADATA = [
@@ -131,6 +136,8 @@ interface AchievementsProps {
 export function Achievements({ role = "patient" }: AchievementsProps) {
   const data = useQuery(api.achievements.get);
   const prevUnlockedRef = useRef<string[]>([]);
+  const { isDemoMode } = useDemoMode();
+  const [demoUnlocked, setDemoUnlocked] = useState<string[]>([]);
 
   useEffect(() => {
     if (data?.unlocked) {
@@ -150,9 +157,32 @@ export function Achievements({ role = "patient" }: AchievementsProps) {
     }
   }, [data?.unlocked]);
 
-  if (!data) return <div className="p-8 text-center text-muted-foreground">Loading achievements...</div>;
+  const handleSimulateUnlock = () => {
+    const achievementsList = role === "doctor" ? DOCTOR_ACHIEVEMENTS_METADATA : PATIENT_ACHIEVEMENTS_METADATA;
+    const locked = achievementsList.filter(a => !demoUnlocked.includes(a.id));
+    
+    if (locked.length > 0) {
+      const random = locked[Math.floor(Math.random() * locked.length)];
+      setDemoUnlocked(prev => [...prev, random.id]);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      toast.success(`Achievement Unlocked: ${random.title}!`);
+    } else {
+      toast.info("All demo achievements unlocked!");
+    }
+  };
+
+  if (!data && !isDemoMode) return <div className="p-8 text-center text-muted-foreground">Loading achievements...</div>;
 
   const achievementsList = role === "doctor" ? DOCTOR_ACHIEVEMENTS_METADATA : PATIENT_ACHIEVEMENTS_METADATA;
+  
+  // Merge real data with demo data if in demo mode
+  const unlocked = isDemoMode ? [...(data?.unlocked || []), ...demoUnlocked] : (data?.unlocked || []);
+  const progress = isDemoMode ? { ...data?.progress, streak_days: 7, articles_read: 5 } : (data?.progress || {});
+  const totalScore = isDemoMode ? (data?.totalScore || 0) + (demoUnlocked.length * 100) : (data?.totalScore || 0);
 
   return (
     <div className="space-y-6">
@@ -167,16 +197,23 @@ export function Achievements({ role = "patient" }: AchievementsProps) {
               : "Track your health milestones and earn badges."}
           </p>
         </div>
-        <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
-          <Trophy className="h-5 w-5 text-primary" />
-          <span className="font-bold text-primary">{data.totalScore} Points</span>
+        <div className="flex items-center gap-2">
+          {isDemoMode && (
+            <Button size="sm" variant="outline" onClick={handleSimulateUnlock} className="mr-2">
+              <Sparkles className="mr-2 h-4 w-4 text-yellow-500" /> Simulate Unlock
+            </Button>
+          )}
+          <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <Trophy className="h-5 w-5 text-primary" />
+            <span className="font-bold text-primary">{totalScore} Points</span>
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {achievementsList.map((achievement) => {
-          const isUnlocked = data.unlocked.includes(achievement.id);
-          const currentProgress = data.progress[achievement.progressKey] || 0;
+          const isUnlocked = unlocked.includes(achievement.id);
+          const currentProgress = progress[achievement.progressKey] || 0;
           const progressPercent = Math.min(100, (currentProgress / achievement.target) * 100);
 
           return (
