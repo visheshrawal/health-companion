@@ -3,7 +3,7 @@ import { api } from "@/convex/_generated/api";
 import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut, Sun, Moon, Sunset, MapPin } from "lucide-react";
+import { Check, AlertCircle, Flame, Calendar as CalendarIcon, LogOut, Sun, Moon, Sunset, MapPin, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -246,10 +246,13 @@ export default function PatientHome() {
           </Card>
 
           <Card className="glass h-full">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle>Upcoming Appointments</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => navigate("/patient/appointments")}>
+                <Plus className="mr-2 h-4 w-4" /> Book
+              </Button>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-4">
               {upcomingAppointments.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">No upcoming appointments.</p>
               ) : (

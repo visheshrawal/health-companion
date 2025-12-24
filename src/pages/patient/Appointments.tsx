@@ -89,9 +89,14 @@ export default function PatientAppointments() {
   return (
     <PatientLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Appointments</h1>
-          <p className="text-muted-foreground">Manage your visits and consultations.</p>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">My Appointments</h1>
+            <p className="text-muted-foreground">Manage your visits and consultations.</p>
+          </div>
+          <Button onClick={() => setIsBooking(true)} className="w-full md:w-auto">
+            <Plus className="mr-2 h-4 w-4" /> Book New Appointment
+          </Button>
         </div>
 
         <div className="space-y-6">
@@ -99,9 +104,6 @@ export default function PatientAppointments() {
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-primary" /> Upcoming Visits
             </h2>
-            <Button onClick={() => setIsBooking(true)} size="sm">
-              <Plus className="mr-2 h-4 w-4" /> Book Appointment
-            </Button>
           </div>
           
           <BookAppointmentDialog 
