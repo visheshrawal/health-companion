@@ -4,22 +4,46 @@ import { Email } from "@convex-dev/auth/providers/Email";
 import { MutationCtx } from "./_generated/server";
 import { ConvexError } from "convex/values";
 
-// We use a manual fetch implementation for email sending to avoid 
-// runtime compatibility issues with the Vly SDK in the default Convex runtime.
+// Enhanced email sending with better error handling and fallback
 async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
-  console.log(`Sending verification code to ${email}`);
+  console.log(`[AUTH] Sending verification code to ${email}`);
   const apiKey = process.env.VLY_INTEGRATION_KEY;
   
   if (!apiKey) {
-    console.error("VLY_INTEGRATION_KEY is not set");
+    console.error("[AUTH] VLY_INTEGRATION_KEY is not set");
+    // In development, log the code instead of failing
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      return; // Allow signup to proceed in dev mode
+    }
     throw new ConvexError("Service configuration error: Missing email API key");
   }
 
-  // Use the correct endpoint found in the SDK source
   const url = "https://integrations.vly.ai/v1/email/send";
 
   try {
-    console.log(`Attempting to send email via ${url}...`);
+    console.log(`[AUTH] Attempting to send email via ${url}...`);
+    console.log(`[AUTH] API Key present: ${apiKey.substring(0, 10)}...`);
+    
+    const payload = {
+      to: [email],
+      from: "Health Companion <noreply@vly.io>",
+      subject: "Sign in to Health Companion",
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <h2>Sign in to Health Companion</h2>
+          <p>Your verification code is:</p>
+          <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
+          <p>This code will expire in 15 minutes.</p>
+          <hr />
+          <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
+        </div>
+      `,
+      text: `Your verification code for Health Companion is: ${token}`,
+    };
+
+    console.log(`[AUTH] Sending to: ${email}`);
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -27,34 +51,39 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
         "Authorization": `Bearer ${apiKey.trim()}`,
         "X-Vly-Version": "0.1.0",
       },
-      body: JSON.stringify({
-        to: [email],
-        from: "Health Companion <noreply@vly.io>",
-        subject: "Sign in to Health Companion",
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <h2>Sign in to Health Companion</h2>
-            <p>Your verification code is:</p>
-            <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
-            <p>This code will expire in 15 minutes.</p>
-            <hr />
-            <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
-          </div>
-        `,
-        text: `Your verification code for Health Companion is: ${token}`,
-      }),
+      body: JSON.stringify(payload),
     });
 
+    const responseText = await response.text();
+    console.log(`[AUTH] Response status: ${response.status}`);
+    console.log(`[AUTH] Response body: ${responseText}`);
+
     if (response.ok) {
-      console.log(`Successfully sent email via ${url}`);
-      return; // Success!
+      console.log(`[AUTH] ✅ Successfully sent email to ${email}`);
+      return;
     }
 
-    const errorText = await response.text();
-    console.error(`Failed to send via ${url}: ${response.status} ${errorText}`);
-    throw new Error(`API Error ${response.status}: ${errorText}`);
+    // If email fails but we're in development, log and continue
+    console.error(`[AUTH] ❌ Failed to send via ${url}: ${response.status} ${responseText}`);
+    
+    // In development mode, allow signup to proceed even if email fails
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      console.log(`[AUTH] Email sending failed but allowing signup to proceed in dev mode`);
+      return;
+    }
+
+    throw new Error(`Email API Error ${response.status}: ${responseText}`);
   } catch (error) {
-    console.error(`Error sending via ${url}:`, error);
+    console.error(`[AUTH] Exception while sending email:`, error);
+    
+    // In development mode, log the code and allow signup
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      console.log(`[AUTH] Email sending failed but allowing signup to proceed in dev mode`);
+      return;
+    }
+    
     throw new ConvexError(`Failed to send verification email: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -100,7 +129,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       // Create new user
       const newUserId = await ctx.db.insert("users", {
         email,
-        role: "patient", // Default role
+        role: "patient",
         profileCompleted: false,
         emailVerified: true,
       });
