@@ -122,7 +122,13 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       const msg = parseError(err);
 
       // Check for specific error conditions
-      if (msg.includes("already in use") || msg.includes("Constraint violation") || msg.includes("Unique constraint") || msg.includes("User already exists")) {
+      if (
+        msg.includes("already in use") || 
+        msg.includes("Constraint violation") || 
+        msg.includes("Unique constraint") || 
+        msg.includes("User already exists") || 
+        (msg.includes("Account") && msg.includes("already exists"))
+      ) {
         setError("This email is already registered. Please sign in instead.");
       } else {
         setError(msg);
@@ -141,7 +147,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     } catch (err) {
       console.error("Resend error:", err);
       const msg = parseError(err);
-      if (msg.includes("already in use")) {
+      if (
+        msg.includes("already in use") || 
+        (msg.includes("Account") && msg.includes("already exists"))
+      ) {
          toast.error("Account already exists. Please try verifying with the existing code or sign in.");
       } else {
          toast.error("Failed to resend code: " + msg);
