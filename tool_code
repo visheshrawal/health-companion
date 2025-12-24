@@ -1,1 +1,1 @@
-print(execute_command_tool(command='npx convex run users:listDoctors'))
+readFilesToContextTool(file_paths=['src/pages/Profile.tsx'])
