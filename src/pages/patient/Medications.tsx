@@ -1,12 +1,11 @@
 import { useQuery, useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { PatientLayout } from "@/components/PatientNav";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Flame, Sun, Moon, Pill, CheckCircle2, Timer, CalendarDays, TrendingUp, Trophy } from "lucide-react";
+import { Flame, Sun, Moon, Pill, CheckCircle, Clock, CalendarDays, TrendingUp, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AdherenceCalendar } from "@/components/medications/AdherenceCalendar";
@@ -39,7 +38,7 @@ export default function PatientMedications() {
   // Group active meds by time of day for "Today's Schedule"
   const getMedsForTime = (timeSlot: string) => {
     return activeMeds.filter(med => 
-      med.schedule?.some(s => s.time === timeSlot)
+      med.schedule?.some((s: any) => s.time === timeSlot)
     );
   };
 
@@ -117,7 +116,7 @@ export default function PatientMedications() {
           {/* Section A: Today's Schedule */}
           <div className="lg:col-span-2 space-y-6">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Timer className="h-5 w-5 text-primary" /> Today's Schedule
+              <Clock className="h-5 w-5 text-primary" /> Today's Schedule
             </h2>
             
             <div className="space-y-6">
@@ -128,7 +127,7 @@ export default function PatientMedications() {
                     <Sun className="h-4 w-4" /> Morning
                   </div>
                   {morningMeds.map(med => {
-                    const schedule = med.schedule?.find(s => s.time === "morning");
+                    const schedule = med.schedule?.find((s: any) => s.time === "morning");
                     const taken = isTaken(med, "morning");
                     return (
                       <Card key={`${med._id}-morning`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
@@ -146,7 +145,7 @@ export default function PatientMedications() {
                               </p>
                             </div>
                           </div>
-                          {taken && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                          {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
                         </CardContent>
                       </Card>
                     );
@@ -161,7 +160,7 @@ export default function PatientMedications() {
                     <Sun className="h-4 w-4" /> Afternoon
                   </div>
                   {afternoonMeds.map(med => {
-                    const schedule = med.schedule?.find(s => s.time === "afternoon");
+                    const schedule = med.schedule?.find((s: any) => s.time === "afternoon");
                     const taken = isTaken(med, "afternoon");
                     return (
                       <Card key={`${med._id}-afternoon`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
@@ -179,7 +178,7 @@ export default function PatientMedications() {
                               </p>
                             </div>
                           </div>
-                          {taken && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                          {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
                         </CardContent>
                       </Card>
                     );
@@ -194,7 +193,7 @@ export default function PatientMedications() {
                     <Moon className="h-4 w-4" /> Night
                   </div>
                   {nightMeds.map(med => {
-                    const schedule = med.schedule?.find(s => s.time === "night");
+                    const schedule = med.schedule?.find((s: any) => s.time === "night");
                     const taken = isTaken(med, "night");
                     return (
                       <Card key={`${med._id}-night`} className={`transition-all ${taken ? 'bg-green-50/50 dark:bg-green-900/10 border-green-200' : 'hover:border-primary/50'}`}>
@@ -212,7 +211,7 @@ export default function PatientMedications() {
                               </p>
                             </div>
                           </div>
-                          {taken && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                          {taken && <CheckCircle className="h-5 w-5 text-green-500" />}
                         </CardContent>
                       </Card>
                     );

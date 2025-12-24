@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { format, startOfWeek, addDays, isSameDay, isAfter, isBefore, startOfDay, endOfDay } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, isAfter, startOfDay, endOfDay } from "date-fns";
 
 interface AdherenceCalendarProps {
   medications: any[];
@@ -21,7 +21,6 @@ export function AdherenceCalendar({ medications }: AdherenceCalendarProps) {
 
     medications.forEach(med => {
       // Check if active on this date
-      // We compare timestamps to be accurate
       const checkTime = endOfDay(date).getTime();
       const startTime = med.startDate;
       const endTime = med.endDate || Infinity;
