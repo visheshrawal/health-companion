@@ -20,6 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DemoMedications } from "@/components/medications/DemoMedications";
+import { useDemoMode } from "@/lib/demo";
 
 export default function PatientHome() {
   const user = useQuery(api.users.currentUser);
@@ -31,6 +33,7 @@ export default function PatientHome() {
   const { signOut } = useAuthActions();
   const navigate = useNavigate();
   const [isSendingSOS, setIsSendingSOS] = useState(false);
+  const { isDemoMode } = useDemoMode();
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -208,6 +211,8 @@ export default function PatientHome() {
             </CardContent>
           </Card>
         </div>
+
+        {isDemoMode && <DemoMedications />}
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="glass h-full">

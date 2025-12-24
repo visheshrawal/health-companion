@@ -209,3 +209,35 @@ export const processConsultationRecording = action({
     }
   },
 });
+
+export const simplifyConsultation = action({
+  args: { summary: v.string() },
+  handler: async (ctx, args) => {
+    const prompt = `
+      Analyze this consultation summary and make it more patient-friendly.
+      Original: "${args.summary}"
+      
+      Return a JSON object with the following structure:
+      {
+        "explanation": "Simplified explanation in plain English",
+        "actionItems": ["Action 1", "Action 2", "Action 3"],
+        "warningSigns": ["Warning 1", "Warning 2"],
+        "encouragement": "Motivation encouragement"
+      }
+      
+      Do not include markdown formatting (like \`\`\`json), just the raw JSON string.
+    `;
+
+    try {
+      const textResponse = await generateContentWithFallback([{ parts: [{ text: prompt }] }]);
+      let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+
+      const result = JSON.parse(jsonString);
+      return result;
+    } catch (error: any) {
+      console.error("Error simplifying consultation:", error);
+      // Propagate the actual error message for debugging
+      throw new Error(`Simplification failed: ${error.message || String(error)}`);
+    }
+  },
+});

@@ -8,11 +8,14 @@ import { format } from "date-fns";
 import { useState, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useDemoMode } from "@/lib/demo";
+import { DemoConsultation } from "@/components/DemoConsultation";
 
 export default function ConsultationHistory() {
   const consultations = useQuery(api.consultations.listForPatient);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { isDemoMode } = useDemoMode();
 
   const handlePlay = (url: string, id: string) => {
     if (playingId === id) {
@@ -38,17 +41,21 @@ export default function ConsultationHistory() {
           <p className="text-muted-foreground">Review AI summaries and recordings from your past doctor visits.</p>
         </div>
 
+        {isDemoMode && <DemoConsultation />}
+
         <div className="grid gap-6">
           {consultations === undefined ? (
             <div className="text-center py-12">Loading history...</div>
           ) : consultations.length === 0 ? (
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium">No consultation history</p>
-                <p className="text-muted-foreground">Summaries will appear here after your appointments.</p>
-              </CardContent>
-            </Card>
+            !isDemoMode && (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                  <p className="text-lg font-medium">No consultation history</p>
+                  <p className="text-muted-foreground">Summaries will appear here after your appointments.</p>
+                </CardContent>
+              </Card>
+            )
           ) : (
             consultations.map((consultation) => (
               <Card key={consultation._id} className="overflow-hidden">

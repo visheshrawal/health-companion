@@ -33,6 +33,60 @@ export const DEMO_DOCTORS = [
   }
 ];
 
+export const DEMO_MEDICATIONS = [
+  {
+    _id: "demo_med_1",
+    name: "Metformin",
+    dosage: "500mg",
+    purpose: "Diabetes",
+    instructions: "Take with food",
+    schedule: [
+      { time: "morning", withFood: true },
+      { time: "evening", withFood: true }
+    ],
+    progress: { current: 15, total: 30 },
+    streak: 7,
+    history: ["taken", "taken", "taken", "taken", "taken", "taken", "taken"]
+  },
+  {
+    _id: "demo_med_2",
+    name: "Atorvastatin",
+    dosage: "20mg",
+    purpose: "Cholesterol",
+    instructions: "Take on empty stomach",
+    schedule: [
+      { time: "night", withFood: false }
+    ],
+    progress: { current: 22, total: 90 },
+    streak: 22,
+    history: ["taken", "taken", "taken", "taken", "taken", "taken", "taken"]
+  },
+  {
+    _id: "demo_med_3",
+    name: "Losartan",
+    dosage: "50mg",
+    purpose: "Blood Pressure",
+    instructions: "Take at any time",
+    schedule: [
+      { time: "morning", withFood: false }
+    ],
+    progress: { current: 8, total: 30 },
+    streak: 8,
+    history: ["taken", "taken", "taken", "taken", "taken", "taken", "taken"]
+  }
+];
+
+export const DEMO_CONSULTATION = {
+  _id: "demo_cons_1",
+  doctorName: "Sharma",
+  date: "2024-03-15",
+  duration: "25 minutes",
+  assessment: "Type 2 Diabetes management review. Blood pressure within target range (128/82 mmHg). Cholesterol levels improved but need monitoring.",
+  treatmentPlan: "Continue: Metformin 500mg (twice daily with meals). Adjust: Atorvastatin increased to 20mg nightly. Add: Daily 30-minute walk after dinner. Follow-up: 4 weeks for repeat HbA1c test.",
+  doctorNotes: "Patient shows good adherence. Focus on dietary consistency. Reduce processed sugar intake. Monitor for leg cramps as side effect of statin.",
+  nextSteps: "Lab tests in 4 weeks. Weight check monthly. Report any dizziness or fatigue."
+};
+
 export const DEMO_APPOINTMENTS: any[] = [
   {
     _id: "demo_apt_1",
