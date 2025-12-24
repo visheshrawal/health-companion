@@ -91,8 +91,10 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("password", { email: email.trim(), password, flow: "signIn" });
       // Redirect handled by useEffect
     } catch (err) {
-      console.error(err);
-      setError("Invalid email or password");
+      console.error("Sign in error:", err);
+      const msg = parseError(err);
+      setError(msg || "Invalid email or password");
+    } finally {
       setIsLoading(false);
     }
   };
@@ -169,8 +171,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
       await signIn("password", { email: email.trim(), password, code: otp, flow: "signUp" });
       // Redirect handled by useEffect
     } catch (err) {
-      console.error(err);
+      console.error("Verification error:", err);
       setError(parseError(err));
+    } finally {
       setIsLoading(false);
     }
   };

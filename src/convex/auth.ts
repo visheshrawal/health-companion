@@ -55,23 +55,29 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
     // Email sending failed - check if we're in development mode
     console.error(`[AUTH] ❌ Email sending failed:`, emailResult.error || emailResult);
     
-    // ALWAYS allow signup in development mode and log the code
-    console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
-    console.log(`[AUTH] ⚠️ Email service unavailable, but allowing signup to proceed`);
-    console.log(`[AUTH] Note: Please ensure VLY_INTEGRATION_KEY has email service access enabled at vly.ai`);
+    // In development mode, log the code and allow signup to proceed
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      console.log(`[AUTH] ⚠️ Email service unavailable, but allowing signup to proceed`);
+      console.log(`[AUTH] Note: Please ensure VLY_INTEGRATION_KEY has email service access enabled at vly.ai`);
+      return; // Allow signup to proceed in dev mode
+    }
     
-    // Return successfully to allow the auth flow to continue
-    return;
+    // In production, throw an error
+    throw new ConvexError(`Failed to send verification email: ${emailResult.error || "Email service unavailable"}`);
   } catch (error) {
     console.error(`[AUTH] Exception while sending email:`, error);
     
-    // ALWAYS log the code and allow signup to proceed
-    console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
-    console.log(`[AUTH] ⚠️ Email service error, but allowing signup to proceed`);
-    console.log(`[AUTH] Error details:`, error instanceof Error ? error.message : String(error));
+    // In development mode, log the code and allow signup to proceed
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      console.log(`[AUTH] ⚠️ Email service error, but allowing signup to proceed`);
+      console.log(`[AUTH] Error details:`, error instanceof Error ? error.message : String(error));
+      return; // Allow signup to proceed in dev mode
+    }
     
-    // Return successfully to allow the auth flow to continue
-    return;
+    // In production, throw an error
+    throw new ConvexError(`Failed to send verification email: ${error instanceof Error ? error.message : "Email sending failed"}`);
   }
 }
 
