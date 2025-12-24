@@ -6,11 +6,17 @@ import { MutationCtx } from "./_generated/server";
 async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
   console.log(`Sending verification code to ${email}`);
   try {
+    const apiKey = process.env.VLY_INTEGRATION_KEY;
+    if (!apiKey) {
+      console.error("VLY_INTEGRATION_KEY is not set in environment variables");
+      throw new Error("Server configuration error: Missing email API key");
+    }
+
     const response = await fetch("https://email.vly.ai/send_otp", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": "vlytothemoon2025",
+        "x-api-key": apiKey,
       },
       body: JSON.stringify({
         to: email,
