@@ -19,15 +19,18 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
     throw new ConvexError("Service configuration error: Missing email API key");
   }
 
-  const url = "https://integrations.vly.ai/v1/email/send";
-
   try {
-    console.log(`[AUTH] Attempting to send email via ${url}...`);
-    console.log(`[AUTH] API Key present: ${apiKey.substring(0, 10)}...`);
+    console.log(`[AUTH] Attempting to send email using VLY SDK...`);
     
-    const payload = {
-      to: [email],
-      from: "Health Companion <noreply@vly.io>",
+    // Import the SDK dynamically in Node runtime
+    const { createVlyIntegrations } = await import("@vly-ai/integrations");
+    const vly = createVlyIntegrations({
+      deploymentToken: apiKey,
+      debug: false,
+    });
+
+    const emailResult = await vly.email.send({
+      to: email,
       subject: "Sign in to Health Companion",
       html: `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
@@ -40,31 +43,17 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
         </div>
       `,
       text: `Your verification code for Health Companion is: ${token}`,
-    };
-
-    console.log(`[AUTH] Sending to: ${email}`);
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey.trim()}`,
-        "X-Vly-Version": "0.1.0",
-      },
-      body: JSON.stringify(payload),
     });
 
-    const responseText = await response.text();
-    console.log(`[AUTH] Response status: ${response.status}`);
-    console.log(`[AUTH] Response body: ${responseText}`);
+    console.log(`[AUTH] Email send result:`, emailResult);
 
-    if (response.ok) {
+    if (emailResult.success) {
       console.log(`[AUTH] ✅ Successfully sent email to ${email}`);
       return;
     }
 
     // If email fails but we're in development, log and continue
-    console.error(`[AUTH] ❌ Failed to send via ${url}: ${response.status} ${responseText}`);
+    console.error(`[AUTH] ❌ Failed to send email:`, emailResult.error);
     
     // In development mode, allow signup to proceed even if email fails
     if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
@@ -73,7 +62,7 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
       return;
     }
 
-    throw new Error(`Email API Error ${response.status}: ${responseText}`);
+    throw new Error(`Email sending failed: ${emailResult.error}`);
   } catch (error) {
     console.error(`[AUTH] Exception while sending email:`, error);
     

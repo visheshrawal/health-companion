@@ -1,6 +1,5 @@
 "use node";
 import { action } from "./_generated/server";
-import { VlyIntegrations } from "@vly-ai/integrations";
 
 export const send = action({
   args: {},
@@ -15,23 +14,25 @@ export const send = action({
     console.log("VLY_INTEGRATION_KEY is present (length: " + apiKey.length + ")");
 
     try {
-        // Initialize SDK with token
-        // Try deploymentToken based on error message
-        const vly = new VlyIntegrations({
-            deploymentToken: apiKey, 
-        } as any); // Cast to any to bypass type check if types are outdated
-        
-        console.log("Attempting to send test email using SDK...");
-        const res = await vly.email.send({
-            to: "test@example.com",
-            subject: "Test Email",
-            html: "<p>This is a test email to verify the Vly Integrations SDK.</p>"
-        });
-        console.log("SDK Send Result:", res);
-        return { success: true, result: res };
+      const { createVlyIntegrations } = await import("@vly-ai/integrations");
+      const vly = createVlyIntegrations({
+        deploymentToken: apiKey,
+        debug: true,
+      });
+      
+      console.log("Attempting to send test email using SDK...");
+      const res = await vly.email.send({
+        to: "test@example.com",
+        subject: "Test Email",
+        html: "<p>This is a test email to verify the Vly Integrations SDK.</p>",
+        text: "This is a test email to verify the Vly Integrations SDK.",
+      });
+      
+      console.log("SDK Send Result:", res);
+      return { success: res.success, result: res };
     } catch (e: any) {
-        console.error("SDK Error:", e);
-        return { success: false, error: e.message, stack: e.stack };
+      console.error("SDK Error:", e);
+      return { success: false, error: e.message, stack: e.stack };
     }
   }
 });

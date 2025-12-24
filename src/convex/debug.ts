@@ -4,6 +4,44 @@ import { v } from "convex/values";
 // @ts-ignore
 import { VlyIntegrations } from "@vly-ai/integrations";
 
+async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
+  console.log(`[DEBUG] Sending verification code to ${email}`);
+  const apiKey = process.env.VLY_INTEGRATION_KEY;
+  
+  if (!apiKey) {
+    console.error("[DEBUG] VLY_INTEGRATION_KEY is not set");
+    throw new Error("VLY_INTEGRATION_KEY is not set");
+  }
+
+  try {
+    const { createVlyIntegrations } = await import("@vly-ai/integrations");
+    const vly = createVlyIntegrations({
+      deploymentToken: apiKey,
+      debug: true,
+    });
+
+    const emailResult = await vly.email.send({
+      to: email,
+      subject: "Sign in to Health Companion",
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <h2>Sign in to Health Companion</h2>
+          <p>Your verification code is:</p>
+          <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
+          <p>This code will expire in 15 minutes.</p>
+        </div>
+      `,
+      text: `Your verification code for Health Companion is: ${token}`,
+    });
+
+    console.log(`[DEBUG] Email send result:`, emailResult);
+    return emailResult;
+  } catch (error) {
+    console.error(`[DEBUG] Exception while sending email:`, error);
+    throw error;
+  }
+}
+
 export const testEmail = action({
   args: { email: v.string() },
   handler: async (ctx, args) => {
@@ -15,9 +53,11 @@ export const testEmail = action({
     }
 
     try {
-      const vly = new VlyIntegrations({
-        token: process.env.VLY_INTEGRATION_KEY!,
-      });
+    const { createVlyIntegrations } = await import("@vly-ai/integrations");
+    const vly = createVlyIntegrations({
+      deploymentToken: process.env.VLY_INTEGRATION_KEY!,
+      debug: true,
+    });
 
       console.log("Sending test email to:", args.email);
       await vly.email.send({
