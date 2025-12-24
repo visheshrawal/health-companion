@@ -82,6 +82,8 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
   }
 }
 
+console.log("Initializing Convex Auth...");
+
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Google({
@@ -107,6 +109,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async createOrUpdateUser(ctx: MutationCtx, args) {
+      console.log("createOrUpdateUser called with args:", JSON.stringify(args, null, 2));
       if (args.existingUserId) {
         return args.existingUserId;
       }
@@ -121,6 +124,9 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         .unique();
 
       if (existingUser) {
+        // Update image if it's from Google and we don't have one or it's different
+        // But be careful not to overwrite custom uploaded images if we can't distinguish
+        // For now, just return existing user
         return existingUser._id;
       }
 

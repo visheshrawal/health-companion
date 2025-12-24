@@ -1,0 +1,4 @@
+1. Ask the user to try logging in with Google again.
+2. If it fails, ask them to check the URL in the browser address bar when they see the "No matching routes found" error.
+3. Verify if the /test-http route works (I can't check it directly, but I can ask the user or infer from logs if I could see them).
+4. If the error persists, it might be a Google Cloud Console configuration issue (Redirect URI mismatch or missing).

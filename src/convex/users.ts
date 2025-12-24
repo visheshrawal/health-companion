@@ -21,7 +21,7 @@ export const currentUser = query({
     let imageUrl = null;
     if (user.image) {
       // Check if it's an external URL (e.g. from Google)
-      if (user.image.startsWith("http")) {
+      if (user.image.startsWith("http") || user.image.startsWith("https")) {
         imageUrl = user.image;
       } else {
         // Assume it's a storage ID
