@@ -27,6 +27,7 @@ import type * as sos from "../sos.js";
 import type * as sosLogs from "../sosLogs.js";
 import type * as test_auth from "../test_auth.js";
 import type * as test_email from "../test_email.js";
+import type * as test_email_manual from "../test_email_manual.js";
 import type * as users from "../users.js";
 
 import type {
@@ -55,6 +56,7 @@ declare const fullApi: ApiFromModules<{
   sosLogs: typeof sosLogs;
   test_auth: typeof test_auth;
   test_email: typeof test_email;
+  test_email_manual: typeof test_email_manual;
   users: typeof users;
 }>;
 

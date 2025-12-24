@@ -18,11 +18,12 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Bearer ${apiKey.trim()}`,
         "X-Vly-Version": "0.1.0",
       },
       body: JSON.stringify({
         to: [email],
+        from: "Health Companion <noreply@vly.io>",
         subject: "Sign in to Health Companion",
         html: `
           <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
