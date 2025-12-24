@@ -5,15 +5,21 @@ import { VlyIntegrations } from "@vly-ai/integrations";
 export const send = action({
   args: {},
   handler: async (ctx) => {
-    if (!process.env.VLY_INTEGRATION_KEY) {
+    const apiKey = process.env.VLY_INTEGRATION_KEY;
+    
+    if (!apiKey) {
+      console.error("VLY_INTEGRATION_KEY is missing");
       return { success: false, error: "VLY_INTEGRATION_KEY not set" };
     }
 
-    const vly = new VlyIntegrations({
-      token: process.env.VLY_INTEGRATION_KEY,
-    });
-    
+    console.log("VLY_INTEGRATION_KEY is present (length: " + apiKey.length + ")");
+
     try {
+        // Initialize SDK inside try/catch to handle initialization errors
+        const vly = new VlyIntegrations({
+            token: apiKey,
+        });
+        
         console.log("Attempting to send test email using SDK...");
         const res = await vly.email.send({
             to: "test@example.com",
