@@ -244,7 +244,7 @@ export default function DoctorHome() {
           return next;
         });
         
-        toast.success(action === 'approve' ? "Request approved" : "Request denied");
+        toast.success(action === 'approve' ? "Request approved" : "Time change rejected notification sent to patient");
       }, 500);
       return;
     }
