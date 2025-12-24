@@ -53,19 +53,36 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async createOrUpdateUser(ctx, args) {
+      console.log("createOrUpdateUser called with args:", JSON.stringify(args, null, 2));
+      
       if (args.existingUserId) {
+        console.log("Updating existing user:", args.existingUserId);
         return args.existingUserId;
       }
 
-      // Create new user with default role
-      const newUserId = await ctx.db.insert("users", {
-        email: args.profile.email,
-        role: "patient", // Default role
-        profileCompleted: false,
-        emailVerified: true,
-      });
+      console.log("Creating new user for profile:", args.profile);
 
-      return newUserId;
+      try {
+        // Create new user with default role
+        // Ensure email is undefined if null/empty to match v.optional(v.string())
+        const email = args.profile.email || undefined;
+
+        const newUserId = await ctx.db.insert("users", {
+          email: email,
+          role: "patient", // Default role
+          profileCompleted: false,
+          emailVerified: true,
+          emailVerificationTime: Date.now(),
+        });
+
+        console.log("Successfully created new user:", newUserId);
+        return newUserId;
+      } catch (error) {
+        console.error("Failed to create user in database:", error);
+        // Throwing a new error here might mask the original one in client, 
+        // but logging it on server is crucial.
+        throw new Error(`Failed to create user profile: ${error instanceof Error ? error.message : String(error)}`);
+      }
     },
   },
 });
