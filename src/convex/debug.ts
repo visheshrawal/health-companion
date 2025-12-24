@@ -34,3 +34,16 @@ export const testEmail = action({
     }
   },
 });
+
+export const checkEnv = action({
+  args: {},
+  handler: async (ctx) => {
+    const siteUrl = process.env.CONVEX_SITE_URL;
+    return {
+      CONVEX_SITE_URL: siteUrl || "NOT_SET",
+      IS_DEFAULT_SITE_URL: siteUrl === "https://your-convex-site.convex.cloud",
+      VLY_INTEGRATION_KEY: process.env.VLY_INTEGRATION_KEY ? "SET" : "NOT_SET",
+      GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY ? "SET" : "NOT_SET",
+    };
+  },
+});
