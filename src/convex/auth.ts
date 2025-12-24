@@ -1,6 +1,7 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
+import { MutationCtx } from "./_generated/server";
 
 async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
   console.log(`Sending verification code to ${email}`);
@@ -52,7 +53,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
     }),
   ],
   callbacks: {
-    async createOrUpdateUser(ctx, args) {
+    async createOrUpdateUser(ctx: MutationCtx, args) {
       console.log("createOrUpdateUser called with args:", JSON.stringify(args, null, 2));
       
       if (args.existingUserId) {
@@ -66,6 +67,19 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         // Create new user with default role
         // Ensure email is undefined if null/empty to match v.optional(v.string())
         const email = args.profile.email || undefined;
+
+        // Check if user with this email already exists to prevent duplicates
+        if (email) {
+          const existingUser = await ctx.db
+            .query("users")
+            .withIndex("by_email", (q) => q.eq("email", email))
+            .first();
+          
+          if (existingUser) {
+            console.log("Found existing user by email, linking:", existingUser._id);
+            return existingUser._id;
+          }
+        }
 
         const newUserId = await ctx.db.insert("users", {
           email: email,

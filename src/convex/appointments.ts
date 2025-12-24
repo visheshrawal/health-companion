@@ -94,7 +94,7 @@ export const getCompletedAppointments = query({
     
     const userRecord = await ctx.db
       .query("users")
-      .withIndex("email", (q) => q.eq("email", user.email!))
+      .withIndex("by_email", (q) => q.eq("email", user.email!))
       .unique();
       
     if (!userRecord) return [];
