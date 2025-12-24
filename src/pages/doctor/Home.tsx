@@ -105,6 +105,7 @@ export default function DoctorHome() {
   const [suggestedDate, setSuggestedDate] = useState<string>("");
   const [showHighPriorityOnly, setShowHighPriorityOnly] = useState(false);
   const [localAppointments, setLocalAppointments] = useState<any[]>([]);
+  const [removingIds, setRemovingIds] = useState<Record<string, string>>({});
   
   // Availability State
   const [isAvailabilityOpen, setIsAvailabilityOpen] = useState(false);
@@ -204,6 +205,50 @@ export default function DoctorHome() {
   };
 
   const handleResolve = async (aptId: any, action: "approve" | "deny" | "suggest", date?: number) => {
+    if (aptId.toString().startsWith('demo_')) {
+      if (action === 'suggest') {
+        toast.success("Change date and time notification sent successfully");
+        setSuggestingId(null);
+        return;
+      }
+
+      // Animate removal
+      setRemovingIds(prev => ({ ...prev, [aptId]: action }));
+
+      setTimeout(() => {
+        setLocalAppointments(prev => prev.map(apt => {
+          if (apt._id === aptId) {
+            if (action === 'approve') {
+              // Update date and remove request
+              return {
+                ...apt,
+                date: apt.rescheduleRequest.newDate,
+                rescheduleRequest: null,
+                status: 'scheduled'
+              };
+            } else {
+              // Just remove request (deny)
+              return {
+                ...apt,
+                rescheduleRequest: null
+              };
+            }
+          }
+          return apt;
+        }));
+        
+        // Clear removing state
+        setRemovingIds(prev => {
+          const next = { ...prev };
+          delete next[aptId];
+          return next;
+        });
+        
+        toast.success(action === 'approve' ? "Request approved" : "Request denied");
+      }, 500);
+      return;
+    }
+
     try {
       await resolveRequest({
         appointmentId: aptId,
@@ -385,7 +430,7 @@ export default function DoctorHome() {
             </CardHeader>
             <CardContent className="space-y-4">
               {rescheduleRequests.map(apt => (
-                <div key={apt._id} className="flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-lg border bg-card/50 gap-4">
+                <div key={apt._id} className={`flex flex-col md:flex-row items-start md:items-center justify-between p-4 rounded-lg border bg-card/50 gap-4 transition-all duration-500 ${removingIds[apt._id] === 'approve' ? 'opacity-0 translate-x-full bg-green-100 dark:bg-green-900/20' : removingIds[apt._id] === 'deny' ? 'opacity-0 -translate-x-full bg-red-100 dark:bg-red-900/20' : ''}`}>
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 font-bold overflow-hidden">
                       {apt.patient?.imageUrl ? (

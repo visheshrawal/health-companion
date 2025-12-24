@@ -182,7 +182,7 @@ export default function PatientHome() {
               <Flame className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{streak || 0} Days</div>
+              <div className="text-2xl font-bold">{isDemoMode ? 27 : (streak || 0)} Days</div>
               <p className="text-xs text-muted-foreground">Keep it up!</p>
             </CardContent>
           </Card>
@@ -192,7 +192,7 @@ export default function PatientHome() {
               <div className="h-4 w-4 rounded-full bg-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeMeds.length}</div>
+              <div className="text-2xl font-bold">{isDemoMode ? 3 : activeMeds.length}</div>
               <p className="text-xs text-muted-foreground">Prescriptions active</p>
             </CardContent>
           </Card>
