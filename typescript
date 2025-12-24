@@ -1,4 +1,1 @@
-const userRecord = await ctx.db
-  .query("users")
-  .withIndex("by_email", (q) => q.eq("email", user.email!))
-  .unique();
+const NearbyHospitals = lazy(() => import("./pages/patient/NearbyHospitals.tsx"));

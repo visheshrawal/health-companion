@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, MapPin, Navigation, Phone, AlertCircle, RefreshCw, Search, Clock } from "lucide-react";
+import { Loader2, MapPin, Navigation, Phone, AlertCircle, RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 
@@ -69,7 +69,7 @@ export default function NearbyHospitals() {
   }, [location]);
 
   const initMap = () => {
-    if (!location || !mapRef.current) return;
+    if (!location || !mapRef.current || !window.google?.maps) return;
     
     try {
       googleMapRef.current = new window.google.maps.Map(mapRef.current, {
