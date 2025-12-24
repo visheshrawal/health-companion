@@ -83,7 +83,8 @@ export const checkEnv = action({
       CONVEX_SITE_URL: siteUrl || "NOT_SET",
       IS_DEFAULT_SITE_URL: siteUrl === "https://your-convex-site.convex.cloud",
       VLY_INTEGRATION_KEY: process.env.VLY_INTEGRATION_KEY ? "SET" : "NOT_SET",
-      GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY ? "SET" : "NOT_SET",
+      GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID ? "SET" : "NOT_SET",
+      GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET ? "SET" : "NOT_SET",
     };
   },
 });

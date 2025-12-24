@@ -1,6 +1,7 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
 import { Email } from "@convex-dev/auth/providers/Email";
+import Google from "@auth/core/providers/google";
 import { MutationCtx } from "./_generated/server";
 import { ConvexError } from "convex/values";
 
@@ -83,6 +84,10 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
     Password({
       id: "password",
       profile(params) {
@@ -122,6 +127,8 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       // Create new user
       const newUserId = await ctx.db.insert("users", {
         email,
+        name: args.profile.name as string | undefined,
+        image: args.profile.picture as string | undefined,
         role: "patient",
         profileCompleted: false,
         emailVerified: true,

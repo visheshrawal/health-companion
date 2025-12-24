@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@auth/core':
+        specifier: ^0.37.4
+        version: 0.37.4
       '@convex-dev/auth':
         specifier: ^0.0.90
         version: 0.0.90(@auth/core@0.37.4)(convex@1.31.2(react@19.2.0))(react@19.2.0)
@@ -2767,9 +2770,6 @@ packages:
   oauth4webapi@3.8.2:
     resolution: {integrity: sha512-FzZZ+bht5X0FKe7Mwz3DAVAmlH1BV5blSak/lHMBKz0/EBMhX6B10GlQYI51+oRp8ObJaX0g6pXrAxZh5s8rjw==}
 
-  oauth4webapi@3.8.3:
-    resolution: {integrity: sha512-pQ5BsX3QRTgnt5HxgHwgunIRaDXBdkT23tf8dfzmtTIL2LTpdmxgbpbBm0VgFWAIDlezQvQCTgnVIUmHupXHxw==}
-
   object-inspect@1.13.4:
     resolution: {integrity: sha512-W67iLl4J2EXEGTbfeHCffrjDfitvLANg0UlX3wFUUSTx92KXRFegMHUVgSqE+wvhAbi4WqjGg9czysTV2Epbew==}
     engines: {node: '>= 0.4'}
@@ -3347,7 +3347,7 @@ snapshots:
     dependencies:
       '@panva/hkdf': 1.2.1
       jose: 5.10.0
-      oauth4webapi: 3.8.3
+      oauth4webapi: 3.8.2
       preact: 10.24.3
       preact-render-to-string: 6.5.11(preact@10.24.3)
 
@@ -5679,8 +5679,6 @@ snapshots:
   normalize-wheel@1.0.1: {}
 
   oauth4webapi@3.8.2: {}
-
-  oauth4webapi@3.8.3: {}
 
   object-inspect@1.13.4: {}
 

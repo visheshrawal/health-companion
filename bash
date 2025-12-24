@@ -1,1 +1,1 @@
-npx convex run test_email:send
+pnpm add @convex-dev/auth@latest
