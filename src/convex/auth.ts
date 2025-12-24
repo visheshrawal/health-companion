@@ -13,21 +13,35 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
       throw new ConvexError("Server configuration error: Missing email API key");
     }
 
-    const response = await fetch("https://email.vly.ai/send_otp", {
+    // Use Vly Integrations API directly to avoid runtime issues with the package in V8
+    const response = await fetch("https://integrations.vly.ai/v1/email/send", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey,
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        to: email,
-        otp: token,
-        appName: "HealthcareCompanion",
+        to: [email],
+        from: "Health Companion <noreply@vly.io>",
+        subject: "Sign in to Health Companion",
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <h2>Sign in to Health Companion</h2>
+            <p>Your verification code is:</p>
+            <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
+            <p>This code will expire in 15 minutes.</p>
+            <hr />
+            <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
+          </div>
+        `,
+        text: `Your verification code for Health Companion is: ${token}`,
       }),
     });
 
     if (!response.ok) {
-      throw new ConvexError(`Failed to send OTP: ${await response.text()}`);
+      const errorText = await response.text();
+      console.error(`Vly Email API Error: ${response.status} ${errorText}`);
+      throw new ConvexError(`Failed to send OTP: ${errorText}`);
     }
   } catch (error) {
     console.error("Failed to send verification email:", error);
