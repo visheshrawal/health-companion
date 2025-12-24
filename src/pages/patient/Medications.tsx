@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Flame, Sun, Moon, Sunset, Pill, CheckCircle2, Clock, CalendarDays, TrendingUp, Trophy } from "lucide-react";
+import { Flame, Sun, Moon, Pill, CheckCircle2, Timer, CalendarDays, TrendingUp, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AdherenceCalendar } from "@/components/medications/AdherenceCalendar";
@@ -117,7 +117,7 @@ export default function PatientMedications() {
           {/* Section A: Today's Schedule */}
           <div className="lg:col-span-2 space-y-6">
             <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" /> Today's Schedule
+              <Timer className="h-5 w-5 text-primary" /> Today's Schedule
             </h2>
             
             <div className="space-y-6">
@@ -158,7 +158,7 @@ export default function PatientMedications() {
               {afternoonMeds.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm font-medium uppercase tracking-wider">
-                    <Sunset className="h-4 w-4" /> Afternoon
+                    <Sun className="h-4 w-4" /> Afternoon
                   </div>
                   {afternoonMeds.map(med => {
                     const schedule = med.schedule?.find(s => s.time === "afternoon");
