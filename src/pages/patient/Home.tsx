@@ -45,6 +45,14 @@ export default function PatientHome() {
   const handleSOS = async () => {
     setIsSendingSOS(true);
     toast.info("Initiating Emergency Alert...");
+
+    if (isDemoMode) {
+      setTimeout(() => {
+        toast.success("Location details sent to emergency contact");
+        setIsSendingSOS(false);
+      }, 2000);
+      return;
+    }
     
     const executeSOS = async (locationData: any) => {
       try {
