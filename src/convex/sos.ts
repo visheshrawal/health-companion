@@ -39,31 +39,43 @@ export const trigger = action({
     }
 
     try {
-      const vly = new VlyIntegrations({
-        token: process.env.VLY_INTEGRATION_KEY!,
-      });
-      
       const locationText = args.location ? `<p><strong>Location:</strong> <a href="${args.location}">${args.location}</a></p>` : "";
       const coordinatesText = args.latitude && args.longitude ? `<p>Coordinates: ${args.latitude}, ${args.longitude}</p>` : "";
 
       console.log(`[SOS] Sending email to ${contactEmail}`);
       
-      await vly.email.send({
-        to: contactEmail,
-        subject: `SOS: Emergency Alert from ${user.name}`,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <h1 style="color: #ef4444;">SOS EMERGENCY ALERT</h1>
-            <p><strong>${user.name}</strong> has triggered an emergency alert.</p>
-            <p>Please contact them immediately or take appropriate action.</p>
-            ${locationText}
-            ${coordinatesText}
-            <p>Time: ${new Date().toLocaleString()}</p>
-            <hr />
-            <p style="font-size: 12px; color: #666;">This is an automated message from Health Companion.</p>
-          </div>
-        `,
+      // Use manual fetch to ensure correct endpoint and headers
+      const url = "https://integrations.vly.ai/v1/email/send";
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.VLY_INTEGRATION_KEY!.trim()}`,
+          "X-Vly-Version": "0.1.0",
+        },
+        body: JSON.stringify({
+          to: [contactEmail],
+          from: "Health Companion <noreply@vly.io>",
+          subject: `SOS: Emergency Alert from ${user.name}`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+              <h1 style="color: #ef4444;">SOS EMERGENCY ALERT</h1>
+              <p><strong>${user.name}</strong> has triggered an emergency alert.</p>
+              <p>Please contact them immediately or take appropriate action.</p>
+              ${locationText}
+              ${coordinatesText}
+              <p>Time: ${new Date().toLocaleString()}</p>
+              <hr />
+              <p style="font-size: 12px; color: #666;">This is an automated message from Health Companion.</p>
+            </div>
+          `,
+        }),
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`API Error ${response.status}: ${text}`);
+      }
 
       console.log(`[SOS] Email sent successfully to ${contactEmail}`);
 

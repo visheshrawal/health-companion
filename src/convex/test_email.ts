@@ -15,7 +15,7 @@ export const send = action({
     console.log("VLY_INTEGRATION_KEY is present (length: " + apiKey.length + ")");
 
     try {
-        // Initialize SDK inside try/catch to handle initialization errors
+        // Initialize SDK with token
         const vly = new VlyIntegrations({
             token: apiKey,
         });

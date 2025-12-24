@@ -15,56 +15,48 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
     throw new ConvexError("Service configuration error: Missing email API key");
   }
 
-  // Try multiple endpoints in case one is deprecated or down
-  const endpoints = [
-    "https://integrations.vly.ai/v1/email/send",
-    "https://api.vly.ai/v1/email/send"
-  ];
+  // Use the correct endpoint found in the SDK source
+  const url = "https://integrations.vly.ai/v1/email/send";
 
-  let lastError;
+  try {
+    console.log(`Attempting to send email via ${url}...`);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey.trim()}`,
+        "X-Vly-Version": "0.1.0",
+      },
+      body: JSON.stringify({
+        to: [email],
+        from: "Health Companion <noreply@vly.io>",
+        subject: "Sign in to Health Companion",
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <h2>Sign in to Health Companion</h2>
+            <p>Your verification code is:</p>
+            <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
+            <p>This code will expire in 15 minutes.</p>
+            <hr />
+            <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
+          </div>
+        `,
+        text: `Your verification code for Health Companion is: ${token}`,
+      }),
+    });
 
-  for (const url of endpoints) {
-    try {
-      console.log(`Attempting to send email via ${url}...`);
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey.trim()}`,
-        },
-        body: JSON.stringify({
-          to: [email],
-          from: "Health Companion <noreply@vly.io>", // Ensure 'from' is set
-          subject: "Sign in to Health Companion",
-          html: `
-            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-              <h2>Sign in to Health Companion</h2>
-              <p>Your verification code is:</p>
-              <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
-              <p>This code will expire in 15 minutes.</p>
-              <hr />
-              <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
-            </div>
-          `,
-          text: `Your verification code for Health Companion is: ${token}`,
-        }),
-      });
-
-      if (response.ok) {
-        console.log(`Successfully sent email via ${url}`);
-        return; // Success!
-      }
-
-      const errorText = await response.text();
-      console.error(`Failed to send via ${url}: ${response.status} ${errorText}`);
-      lastError = errorText;
-    } catch (error) {
-      console.error(`Error sending via ${url}:`, error);
-      lastError = error instanceof Error ? error.message : String(error);
+    if (response.ok) {
+      console.log(`Successfully sent email via ${url}`);
+      return; // Success!
     }
-  }
 
-  throw new ConvexError(`Failed to send verification email: ${lastError}`);
+    const errorText = await response.text();
+    console.error(`Failed to send via ${url}: ${response.status} ${errorText}`);
+    throw new Error(`API Error ${response.status}: ${errorText}`);
+  } catch (error) {
+    console.error(`Error sending via ${url}:`, error);
+    throw new ConvexError(`Failed to send verification email: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
