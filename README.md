@@ -1,6 +1,6 @@
 # 🩺 Health Companion: Never Miss What Matters Most
 
-**AI-Powered Healthcare Companion for Patients & Doctors | GDGoC
+**AI-Powered Healthcare Companion for Patients & Doctors | GDGoC**
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/visheshrawal/health-companion)
 
 ## 🌟 The Problem We Solve
