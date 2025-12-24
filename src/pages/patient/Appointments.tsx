@@ -11,9 +11,15 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { BookAppointmentDialog } from "@/components/appointments/BookAppointmentDialog";
+import { useDemoMode, DEMO_APPOINTMENTS } from "@/lib/demo";
 
 export default function PatientAppointments() {
-  const appointments = useQuery(api.appointments.listForPatient);
+  const { isDemoMode } = useDemoMode();
+  const realAppointments = useQuery(api.appointments.listForPatient);
+  const appointments = isDemoMode 
+    ? [...(realAppointments || []), ...DEMO_APPOINTMENTS]
+    : realAppointments;
+
   const requestReschedule = useMutation(api.appointments.requestReschedule);
   const createAppointment = useMutation(api.appointments.create);
   const doctors = useQuery(api.users.listDoctors);
@@ -29,7 +35,7 @@ export default function PatientAppointments() {
   // Fetch slots when rescheduling or booking
   // For booking: we need selectedDoctor and selectedDate
   const slots = useQuery(api.appointments.getDoctorSlots, 
-    (isBooking && selectedDoctor && selectedDate) ? { 
+    (isBooking && selectedDoctor && selectedDate && !selectedDoctor._id.toString().startsWith('demo_')) ? { 
       doctorId: selectedDoctor._id, 
       date: selectedDate.getTime() 
     } : "skip"
@@ -37,14 +43,22 @@ export default function PatientAppointments() {
 
   // For rescheduling: we need selectedApt and selectedDate
   const rescheduleSlots = useQuery(api.appointments.getDoctorSlots,
-    (isRescheduling && selectedApt && selectedDate) ? {
-      doctorId: selectedApt.doctorId,
+    (isRescheduling && selectedApt && selectedDate && !selectedApt.doctor?._id.toString().startsWith('demo_')) ? {
+      doctorId: selectedApt.doctor?._id || selectedApt.doctorId,
       date: selectedDate.getTime()
     } : "skip"
   ) || [];
 
   const handleReschedule = async () => {
     if (!selectedApt || !selectedSlot) return;
+    
+    if (selectedApt._id.toString().startsWith('demo_') || selectedApt.doctor?._id.toString().startsWith('demo_')) {
+      toast.success("Reschedule request sent to doctor (Demo)");
+      setIsRescheduling(false);
+      setSelectedDate(undefined);
+      setSelectedSlot(null);
+      return;
+    }
     
     try {
       await requestReschedule({
@@ -63,6 +77,17 @@ export default function PatientAppointments() {
 
   const handleBook = async (additionalData?: any) => {
     if (!selectedDoctor || !selectedSlot) return;
+
+    if (selectedDoctor._id.toString().startsWith('demo_')) {
+      toast.success("Appointment booked successfully (Demo)");
+      setIsBooking(false);
+      setSelectedDoctor(null);
+      setSelectedDate(undefined);
+      setSelectedSlot(null);
+      setBookingReason("");
+      return;
+    }
+
     try {
       await createAppointment({
         doctorId: selectedDoctor._id,
