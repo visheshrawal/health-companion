@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, MapPin, Navigation, Phone, AlertCircle, RefreshCw, Search } from "lucide-react";
+import { Loader2, MapPin, Navigation, Phone, AlertCircle, RefreshCw, Search, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
 
@@ -30,6 +30,7 @@ interface Hospital {
   opening_hours?: {
     open_now: boolean;
   };
+  formatted_phone_number?: string;
 }
 
 export default function NearbyHospitals() {
@@ -39,8 +40,10 @@ export default function NearbyHospitals() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loadingPhone, setLoadingPhone] = useState<string | null>(null);
   
   const searchHospitals = useAction(api.hospitals.searchNearby);
+  const getHospitalDetails = useAction(api.hospitals.getDetails);
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<any>(null);
@@ -133,10 +136,23 @@ export default function NearbyHospitals() {
     });
   };
 
-  const fetchLocation = () => {
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d.toFixed(1);
+  };
+
+  const fetchLocation = (query?: string) => {
     setIsLoading(true);
     setError(null);
-    setAddress("Locating...");
+    if (!query) setAddress("Locating...");
 
     if (!navigator.geolocation) {
       setError("Geolocation is not supported by your browser");
@@ -147,11 +163,17 @@ export default function NearbyHospitals() {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
-        setLocation({ lat: latitude, lng: longitude });
-        setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`); // Placeholder for reverse geocoding
+        if (!location) {
+          setLocation({ lat: latitude, lng: longitude });
+          setAddress(`${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+        }
         
         try {
-          const data = await searchHospitals({ latitude, longitude });
+          const data = await searchHospitals({ 
+            latitude, 
+            longitude,
+            keyword: query || searchQuery || "emergency"
+          });
           if (data.error) {
             setError(data.error);
           } else {
@@ -171,6 +193,37 @@ export default function NearbyHospitals() {
         setIsLoading(false);
       }
     );
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchLocation(searchQuery);
+  };
+
+  const handleCall = async (hospital: Hospital) => {
+    if (hospital.formatted_phone_number) {
+      window.open(`tel:${hospital.formatted_phone_number}`);
+      return;
+    }
+
+    setLoadingPhone(hospital.place_id);
+    try {
+      const details = await getHospitalDetails({ place_id: hospital.place_id });
+      if (details.formatted_phone_number) {
+        setHospitals(prev => prev.map(h => 
+          h.place_id === hospital.place_id 
+            ? { ...h, formatted_phone_number: details.formatted_phone_number } 
+            : h
+        ));
+        window.open(`tel:${details.formatted_phone_number}`);
+      } else {
+        toast.error("Phone number not available for this location");
+      }
+    } catch (error) {
+      toast.error("Failed to fetch contact details");
+    } finally {
+      setLoadingPhone(null);
+    }
   };
 
   useEffect(() => {
@@ -196,46 +249,48 @@ export default function NearbyHospitals() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="icon" onClick={fetchLocation} disabled={isLoading}>
+            <Button variant="outline" size="icon" onClick={() => fetchLocation()} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-            <div className="relative hidden md:block">
+            <form onSubmit={handleSearch} className="relative hidden md:block">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search area..." 
-                className="pl-9 w-[200px]" 
+                placeholder="Search (e.g. Dentist, Clinic)..." 
+                className="pl-9 w-[250px]" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                disabled
+                disabled={isLoading}
               />
-            </div>
+            </form>
           </div>
         </div>
 
         {/* Main Content */}
         <div className="flex-1 grid md:grid-cols-2 gap-4 min-h-0">
           {/* Map View */}
-          <Card className="overflow-hidden border-0 shadow-none md:border md:shadow-sm h-[300px] md:h-auto relative">
-            <div ref={mapRef} className="w-full h-full bg-muted" />
+          <div className="relative h-[300px] md:h-auto">
+            <Card className="overflow-hidden border-0 shadow-none md:border md:shadow-sm h-full relative">
+              <div ref={mapRef} className="w-full h-full bg-muted" />
+              <div className="absolute bottom-4 left-4 right-4 bg-background/90 backdrop-blur p-2 rounded-lg text-xs text-muted-foreground text-center border z-20">
+                Important: Distances are estimates. Call ahead to confirm services.
+              </div>
+            </Card>
             {!window.google?.maps && (
-              <div className="absolute inset-0 flex items-center justify-center bg-muted z-10">
-                <div className="text-center p-4">
+              <div className="absolute inset-0 md:col-start-1 md:col-end-2 flex items-center justify-center bg-muted/50 z-10 pointer-events-none">
+                <div className="text-center p-4 bg-background/80 backdrop-blur rounded-xl border shadow-sm">
                   <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-muted-foreground">Map requires configuration</p>
+                  <p className="text-muted-foreground">Loading Map...</p>
                 </div>
               </div>
             )}
-            <div className="absolute bottom-4 left-4 right-4 bg-background/90 backdrop-blur p-2 rounded-lg text-xs text-muted-foreground text-center border z-20">
-              Important: Distances are estimates. Call ahead to confirm services.
-            </div>
-          </Card>
+          </div>
 
           {/* Hospital List */}
           <Card className="flex flex-col h-full overflow-hidden border-0 shadow-none md:border md:shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-red-500" />
-                Hospitals & Medical Centers
+                Nearby Facilities
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-hidden p-0">
@@ -245,11 +300,11 @@ export default function NearbyHospitals() {
                     <div className="text-center py-8 text-destructive">
                       <AlertCircle className="h-8 w-8 mx-auto mb-2" />
                       <p>{error}</p>
-                      <Button variant="outline" className="mt-4" onClick={fetchLocation}>Retry</Button>
+                      <Button variant="outline" className="mt-4" onClick={() => fetchLocation()}>Retry</Button>
                     </div>
                   ) : hospitals.length === 0 && !isLoading ? (
                     <div className="text-center py-8 text-muted-foreground">
-                      No hospitals found nearby.
+                      No facilities found nearby.
                     </div>
                   ) : (
                     hospitals.map((hospital) => (
@@ -258,9 +313,15 @@ export default function NearbyHospitals() {
                           <div>
                             <h3 className="font-semibold">{hospital.name}</h3>
                             <p className="text-sm text-muted-foreground line-clamp-1">{hospital.vicinity}</p>
+                            {location && (
+                              <p className="text-xs text-primary mt-1 flex items-center gap-1">
+                                <Navigation className="h-3 w-3" />
+                                {calculateDistance(location.lat, location.lng, hospital.geometry.location.lat, hospital.geometry.location.lng)} km away
+                              </p>
+                            )}
                           </div>
                           {hospital.rating && (
-                            <span className="text-xs font-medium bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded dark:bg-yellow-900/30 dark:text-yellow-400">
+                            <span className="text-xs font-medium bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded dark:bg-yellow-900/30 dark:text-yellow-400 shrink-0">
                               ★ {hospital.rating}
                             </span>
                           )}
@@ -274,8 +335,18 @@ export default function NearbyHospitals() {
                           >
                             <Navigation className="mr-2 h-3 w-3" /> Directions
                           </Button>
-                          <Button size="sm" variant="outline" className="h-8 px-3">
-                            <Phone className="h-3 w-3" />
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="h-8 px-3"
+                            onClick={() => handleCall(hospital)}
+                            disabled={loadingPhone === hospital.place_id}
+                          >
+                            {loadingPhone === hospital.place_id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Phone className="h-3 w-3" />
+                            )}
                           </Button>
                         </div>
                       </div>
