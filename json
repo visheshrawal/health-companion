@@ -1,6 +1,1 @@
-{
-  "file_paths": [
-    "src/lib/vly-integrations.ts"
-  ],
-  "replace_files_in_context": false
-}
+{"type":"readFilesToContextTool","file_paths":["src/convex/auth.ts","src/convex/auth.config.ts"]}
