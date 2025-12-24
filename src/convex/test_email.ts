@@ -16,9 +16,10 @@ export const send = action({
 
     try {
         // Initialize SDK with token
+        // Try deploymentToken based on error message
         const vly = new VlyIntegrations({
-            token: apiKey,
-        });
+            deploymentToken: apiKey, 
+        } as any); // Cast to any to bypass type check if types are outdated
         
         console.log("Attempting to send test email using SDK...");
         const res = await vly.email.send({
