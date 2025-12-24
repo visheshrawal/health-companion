@@ -1,1 +1,1 @@
-{"type":"readFilesToContextTool","file_paths":["src/convex/auth.ts","src/convex/auth.config.ts"]}
+{"type":"readFilesToContextTool","file_paths":["src/pages/doctor/AppointmentDetail.tsx"],"replace_files_in_context":false}
