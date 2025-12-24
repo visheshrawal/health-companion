@@ -1,8 +1,6 @@
 # 🩺 Health Companion: Never Miss What Matters Most
 
-**AI-Powered Healthcare Companion for Patients & Doctors | GDSC Hackathon 2024**
-
-[![Live Demo](https://img.shields.io/badge/LIVE-DEMO-4A90E2?style=for-the-badge)](https://https://every-ghosts-judge.vly.sh/)
+**AI-Powered Healthcare Companion for Patients & Doctors | GDGoC
 [![GitHub](https://img.shields.io/badge/GitHub-Repository-181717?style=for-the-badge&logo=github)](https://github.com/visheshrawal/health-companion)
 
 ## 🌟 The Problem We Solve
