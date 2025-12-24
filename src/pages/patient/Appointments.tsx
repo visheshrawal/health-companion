@@ -4,7 +4,7 @@ import { PatientLayout } from "@/components/PatientNav";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Calendar as CalendarIcon, Clock, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight, ArrowLeft, Plus } from "lucide-react";
 import { format, addDays, startOfWeek, startOfDay } from "date-fns";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -99,6 +99,11 @@ export default function PatientAppointments() {
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-primary" /> Upcoming Visits
             </h2>
+            {upcomingAppointments.length > 0 && (
+              <Button onClick={() => setIsBooking(true)} size="sm">
+                <Plus className="mr-2 h-4 w-4" /> Book Appointment
+              </Button>
+            )}
           </div>
           
           <BookAppointmentDialog 
