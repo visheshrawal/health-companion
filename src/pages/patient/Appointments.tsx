@@ -94,9 +94,11 @@ export default function PatientAppointments() {
             <h1 className="text-3xl font-bold tracking-tight">My Appointments</h1>
             <p className="text-muted-foreground">Manage your visits and consultations.</p>
           </div>
-          <Button onClick={() => setIsBooking(true)} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" /> Book New Appointment
-          </Button>
+          {upcomingAppointments.length === 0 && (
+            <Button onClick={() => setIsBooking(true)} className="w-full md:w-auto">
+              <Plus className="mr-2 h-4 w-4" /> Book New Appointment
+            </Button>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -105,7 +107,7 @@ export default function PatientAppointments() {
               <CalendarIcon className="h-5 w-5 text-primary" /> Upcoming Visits
             </h2>
             {upcomingAppointments.length > 0 && (
-              <Button onClick={() => setIsBooking(true)} size="sm" variant="outline" className="hidden md:flex">
+              <Button onClick={() => setIsBooking(true)} size="sm" variant="outline">
                 <Plus className="mr-2 h-4 w-4" /> Book Another
               </Button>
             )}
