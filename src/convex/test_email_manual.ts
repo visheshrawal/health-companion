@@ -11,35 +11,45 @@ export const send = action({
 
     console.log("Testing manual email send...");
     
-    try {
-      const response = await fetch("https://integrations.vly.ai/v1/email/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey.trim()}`,
-          "X-Vly-Version": "0.1.0",
-        },
-        body: JSON.stringify({
-          to: ["test@example.com"], // Replace with a real email if needed for verification
-          from: "Health Companion <noreply@vly.io>",
-          subject: "Test Email (Manual Fetch)",
-          html: "<p>This is a test email sent via manual fetch.</p>",
-          text: "This is a test email sent via manual fetch.",
-        }),
-      });
+    const urls = [
+      "https://integrations.vly.ai/v1/email/send",
+      "https://api.vly.ai/v1/email/send",
+      "https://vly.ai/api/v1/email/send"
+    ];
 
-      const text = await response.text();
-      console.log("Response status:", response.status);
-      console.log("Response body:", text);
+    for (const url of urls) {
+      console.log(`Trying URL: ${url}`);
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey.trim()}`,
+            "X-Vly-Version": "0.1.0",
+          },
+          body: JSON.stringify({
+            to: ["test@example.com"],
+            from: "Health Companion <noreply@vly.io>",
+            subject: `Test Email (${url})`,
+            html: "<p>This is a test email.</p>",
+            text: "This is a test email.",
+          }),
+        });
 
-      if (!response.ok) {
-        return { success: false, error: `API Error ${response.status}: ${text}` };
+        const text = await response.text();
+        console.log(`Response status for ${url}:`, response.status);
+        
+        if (response.ok) {
+          console.log("SUCCESS with URL:", url);
+          return { success: true, url, result: JSON.parse(text) };
+        } else {
+          console.log(`Failed with ${url}: ${text}`);
+        }
+      } catch (e: any) {
+        console.error(`Error with ${url}:`, e.message);
       }
-
-      return { success: true, result: JSON.parse(text) };
-    } catch (e: any) {
-      console.error("Fetch Error:", e);
-      return { success: false, error: e.message, stack: e.stack };
     }
+
+    return { success: false, error: "All URLs failed" };
   }
 });
