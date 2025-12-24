@@ -9,12 +9,15 @@ import { Flame, Sun, Moon, Pill, CheckCircle, Clock, CalendarDays, TrendingUp, T
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { AdherenceCalendar } from "@/components/medications/AdherenceCalendar";
+import { useDemoMode } from "@/lib/demo";
+import { DemoMedications } from "@/components/medications/DemoMedications";
 
 export default function PatientMedications() {
   const medications = useQuery(api.medications.list);
   const streak = useQuery(api.medications.getStreak);
   const stats = useQuery(api.medications.getAdherenceStats);
   const toggleTaken = useMutation(api.medications.toggleTaken);
+  const { isDemoMode } = useDemoMode();
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -61,6 +64,8 @@ export default function PatientMedications() {
             <p className="text-muted-foreground">Track your daily prescriptions and adherence.</p>
           </div>
         </div>
+
+        {isDemoMode && <DemoMedications />}
 
         {/* Adherence Calendar */}
         <div className="space-y-4">
