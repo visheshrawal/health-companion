@@ -51,4 +51,21 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       },
     }),
   ],
+  callbacks: {
+    async createOrUpdateUser(ctx, args) {
+      if (args.existingUserId) {
+        return args.existingUserId;
+      }
+
+      // Create new user with default role
+      const newUserId = await ctx.db.insert("users", {
+        email: args.profile.email,
+        role: "patient", // Default role
+        profileCompleted: false,
+        emailVerified: true,
+      });
+
+      return newUserId;
+    },
+  },
 });

@@ -20,6 +20,7 @@ const schema = defineSchema(
       image: v.optional(v.string()),
       email: v.optional(v.string()),
       emailVerificationTime: v.optional(v.number()),
+      emailVerified: v.optional(v.boolean()),
       isAnonymous: v.optional(v.boolean()),
       role: v.optional(roleValidator),
       profileCompleted: v.optional(v.boolean()),
