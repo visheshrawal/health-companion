@@ -32,6 +32,11 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
     Password({
       id: "password",
+      profile(params) {
+        return {
+          email: params.email as string,
+        };
+      },
       verify: Email({
         id: "email-verification",
         maxAge: 60 * 15, // 15 minutes
@@ -66,19 +71,21 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
       try {
         // Create new user with default role
         // Ensure email is undefined if null/empty to match v.optional(v.string())
-        const email = args.profile.email || undefined;
+        const email = args.profile.email as string | undefined;
+
+        if (!email) {
+          throw new Error("Email is required for user creation");
+        }
 
         // Check if user with this email already exists to prevent duplicates
-        if (email) {
-          const existingUser = await ctx.db
-            .query("users")
-            .withIndex("email", (q) => q.eq("email", email))
-            .first();
-          
-          if (existingUser) {
-            console.log("Found existing user by email, linking:", existingUser._id);
-            return existingUser._id;
-          }
+        const existingUser = await ctx.db
+          .query("users")
+          .withIndex("email", (q) => q.eq("email", email))
+          .first();
+        
+        if (existingUser) {
+          console.log("Found existing user by email, linking:", existingUser._id);
+          return existingUser._id;
         }
 
         const newUserId = await ctx.db.insert("users", {
