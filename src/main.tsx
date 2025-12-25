@@ -34,7 +34,7 @@ function RouteLoading() {
   );
 }
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL || "https://harmless-tapir-303.convex.cloud");
 
 
 

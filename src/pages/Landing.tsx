@@ -1,11 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { 
-  Heart, Shield, Activity, ArrowRight, 
-  Brain, FileText, Languages, 
-  Pill, Calendar, Clock, 
-  Siren, MapPin, Users, 
-  LayoutDashboard, Workflow, Timer 
+  ArrowRight, Brain, FileText, Languages, 
+  Activity, Clock, Calendar, Siren, MapPin, 
+  Users, LayoutDashboard, Workflow, Timer 
 } from "lucide-react";
 
 export default function Landing() {
