@@ -240,6 +240,32 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
     }
   };
 
+  const handleDemoLogin = async (role: 'patient' | 'doctor') => {
+    setIsLoading(true);
+    setError(null);
+    const demoCreds = {
+      patient: { email: "vrawal2007.vr@gmail.com", password: "Vrawal@2007" },
+      doctor: { email: "vishulevel@gmail.com", password: "Vrawal@2007" }
+    };
+    
+    const { email, password } = demoCreds[role];
+    
+    // Update UI state for visual feedback
+    setEmail(email);
+    setPassword(password);
+    setFlow("signIn");
+
+    try {
+      await signIn("password", { email, password, flow: "signIn" });
+      // Redirect handled by useEffect
+    } catch (err) {
+      console.error("Demo login error:", err);
+      setError("Failed to sign in with demo account");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="flex flex-col justify-center p-8 md:p-16 bg-background">
@@ -392,6 +418,26 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                 </Button>
               </>
             )}
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Demo Access
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Button variant="outline" onClick={() => handleDemoLogin('patient')} disabled={isLoading}>
+              Test Patient
+            </Button>
+            <Button variant="outline" onClick={() => handleDemoLogin('doctor')} disabled={isLoading}>
+              Test Doctor
+            </Button>
           </div>
         </div>
       </div>
