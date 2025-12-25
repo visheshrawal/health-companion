@@ -102,7 +102,7 @@ Watching our parents manage medications, struggle with confusing medical advice,
 ### Installation
 ```bash
 # Clone repository
-git clone https://github.com/your-username/health-companion.git
+git clone https://github.com/visheshrawal/health-companion.git
 cd health-companion
 
 # Install dependencies
