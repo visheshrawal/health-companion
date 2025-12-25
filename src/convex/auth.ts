@@ -20,51 +20,52 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
   }
 
   try {
-    console.log(`[AUTH] Attempting to send email using VLY SDK...`);
+    console.log(`[AUTH] Attempting to send email using fetch...`);
     
-    // Import the SDK dynamically in Node runtime
-    const { createVlyIntegrations } = await import("@vly-ai/integrations");
-    const vly = createVlyIntegrations({
-      deploymentToken: apiKey,
-      debug: false,
+    const url = "https://integrations.vly.ai/v1/email/send";
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "X-Vly-Version": "0.1.0",
+      },
+      body: JSON.stringify({
+        to: [email],
+        from: "Health Companion <noreply@vly.io>",
+        subject: "Sign in to Health Companion",
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <h2>Sign in to Health Companion</h2>
+            <p>Your verification code is:</p>
+            <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
+            <p>This code will expire in 15 minutes.</p>
+            <hr />
+            <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
+          </div>
+        `,
+        text: `Your verification code for Health Companion is: ${token}`,
+      }),
     });
 
-    const emailResult = await vly.email.send({
-      to: email,
-      subject: "Sign in to Health Companion",
-      html: `
-        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <h2>Sign in to Health Companion</h2>
-          <p>Your verification code is:</p>
-          <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
-          <p>This code will expire in 15 minutes.</p>
-          <hr />
-          <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
-        </div>
-      `,
-      text: `Your verification code for Health Companion is: ${token}`,
-    });
-
-    console.log(`[AUTH] Email send result:`, JSON.stringify(emailResult, null, 2));
-
-    if (emailResult.success) {
-      console.log(`[AUTH] ✅ Successfully sent email to ${email}`);
-      return;
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`[AUTH] ❌ Email sending failed: ${response.status} ${text}`);
+      
+      // In development mode, log the code and allow signup to proceed even if email fails
+      if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+        console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+        console.log(`[AUTH] ⚠️ Email service unavailable, but allowing signup to proceed`);
+        return; 
+      }
+      
+      throw new Error(`Email service error: ${response.status} ${text}`);
     }
 
-    // Email sending failed - check if we're in development mode
-    console.error(`[AUTH] ❌ Email sending failed:`, emailResult.error || emailResult);
-    
-    // In development mode, log the code and allow signup to proceed
-    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
-      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
-      console.log(`[AUTH] ⚠️ Email service unavailable, but allowing signup to proceed`);
-      console.log(`[AUTH] Note: Please ensure VLY_INTEGRATION_KEY has email service access enabled at vly.ai`);
-      return; // Allow signup to proceed in dev mode
-    }
-    
-    // In production, throw an error
-    throw new ConvexError(`Failed to send verification email: ${emailResult.error || "Email service unavailable"}`);
+    console.log(`[AUTH] ✅ Successfully sent email to ${email}`);
+    return;
+
   } catch (error) {
     console.error(`[AUTH] Exception while sending email:`, error);
     
@@ -119,9 +120,6 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         .unique();
 
       if (existingUser) {
-        // Update image if it's from Google and we don't have one or it's different
-        // But be careful not to overwrite custom uploaded images if we can't distinguish
-        // For now, just return existing user
         return existingUser._id;
       }
 
