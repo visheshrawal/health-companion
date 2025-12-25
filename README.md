@@ -66,11 +66,6 @@ Watching our parents manage medications, struggle with confusing medical advice,
 - **Vercel** for deployment
 - **pnpm** for package management
 
-## 📱 Screenshots
-| Patient Dashboard | Symptom Analyzer | Doctor Prescription |
-|-------------------|------------------|---------------------|
-| ![Dashboard](https://ibb.co/N2zTByJ0) | ![Symptom](https://via.placeholder.com/300x200/7ED321/FFFFFF?text=AI+Symptom+Checker) | ![Prescription](https://via.placeholder.com/300x200/9013FE/FFFFFF?text=Digital+Prescription) |
-
 ## 🏗️ Architecture
 ┌─────────────────────────────────────────────────────────────┐
 │Frontend (React + Vite) 
