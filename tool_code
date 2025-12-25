@@ -1,1 +1,1 @@
-readFilesToContextTool(file_paths=['src/pages/Profile.tsx'])
+print(default_api.executeCommandTool(command="npx convex run test_email_debug:testUrls"))

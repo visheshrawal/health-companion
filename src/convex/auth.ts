@@ -4,60 +4,84 @@ import { Email } from "@convex-dev/auth/providers/Email";
 import { MutationCtx } from "./_generated/server";
 import { ConvexError } from "convex/values";
 
-// We use a manual fetch implementation for email sending to avoid 
-// runtime compatibility issues with the Vly SDK in the default Convex runtime.
+// Enhanced email sending with better error handling and fallback
 async function sendVerificationRequest({ identifier: email, token }: { identifier: string, token: string }) {
-  console.log(`Sending verification code to ${email}`);
+  console.log(`[AUTH] Sending verification code to ${email}`);
   const apiKey = process.env.VLY_INTEGRATION_KEY;
   
   if (!apiKey) {
-    console.error("VLY_INTEGRATION_KEY is not set");
+    console.error("[AUTH] VLY_INTEGRATION_KEY is not set");
+    // In development, log the code instead of failing
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      return; // Allow signup to proceed in dev mode
+    }
     throw new ConvexError("Service configuration error: Missing email API key");
   }
 
-  // Use the correct endpoint found in the SDK source
-  const url = "https://integrations.vly.ai/v1/email/send";
-
   try {
-    console.log(`Attempting to send email via ${url}...`);
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey.trim()}`,
-        "X-Vly-Version": "0.1.0",
-      },
-      body: JSON.stringify({
-        to: [email],
-        from: "Health Companion <noreply@vly.io>",
-        subject: "Sign in to Health Companion",
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-            <h2>Sign in to Health Companion</h2>
-            <p>Your verification code is:</p>
-            <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
-            <p>This code will expire in 15 minutes.</p>
-            <hr />
-            <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
-          </div>
-        `,
-        text: `Your verification code for Health Companion is: ${token}`,
-      }),
+    console.log(`[AUTH] Attempting to send email using VLY SDK...`);
+    
+    // Import the SDK dynamically in Node runtime
+    const { createVlyIntegrations } = await import("@vly-ai/integrations");
+    const vly = createVlyIntegrations({
+      deploymentToken: apiKey,
+      debug: false,
     });
 
-    if (response.ok) {
-      console.log(`Successfully sent email via ${url}`);
-      return; // Success!
+    const emailResult = await vly.email.send({
+      to: email,
+      subject: "Sign in to Health Companion",
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <h2>Sign in to Health Companion</h2>
+          <p>Your verification code is:</p>
+          <h1 style="letter-spacing: 5px; background: #f4f4f5; padding: 10px; border-radius: 4px; display: inline-block;">${token}</h1>
+          <p>This code will expire in 15 minutes.</p>
+          <hr />
+          <p style="font-size: 12px; color: #666;">If you didn't request this code, you can safely ignore this email.</p>
+        </div>
+      `,
+      text: `Your verification code for Health Companion is: ${token}`,
+    });
+
+    console.log(`[AUTH] Email send result:`, JSON.stringify(emailResult, null, 2));
+
+    if (emailResult.success) {
+      console.log(`[AUTH] ✅ Successfully sent email to ${email}`);
+      return;
     }
 
-    const errorText = await response.text();
-    console.error(`Failed to send via ${url}: ${response.status} ${errorText}`);
-    throw new Error(`API Error ${response.status}: ${errorText}`);
+    // Email sending failed - check if we're in development mode
+    console.error(`[AUTH] ❌ Email sending failed:`, emailResult.error || emailResult);
+    
+    // In development mode, log the code and allow signup to proceed
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      console.log(`[AUTH] ⚠️ Email service unavailable, but allowing signup to proceed`);
+      console.log(`[AUTH] Note: Please ensure VLY_INTEGRATION_KEY has email service access enabled at vly.ai`);
+      return; // Allow signup to proceed in dev mode
+    }
+    
+    // In production, throw an error
+    throw new ConvexError(`Failed to send verification email: ${emailResult.error || "Email service unavailable"}`);
   } catch (error) {
-    console.error(`Error sending via ${url}:`, error);
-    throw new ConvexError(`Failed to send verification email: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`[AUTH] Exception while sending email:`, error);
+    
+    // In development mode, log the code and allow signup to proceed
+    if (process.env.CONVEX_CLOUD_URL?.includes("localhost") || !process.env.CONVEX_CLOUD_URL) {
+      console.log(`[AUTH] DEVELOPMENT MODE - Verification code for ${email}: ${token}`);
+      console.log(`[AUTH] ⚠️ Email service error, but allowing signup to proceed`);
+      console.log(`[AUTH] Error details:`, error instanceof Error ? error.message : String(error));
+      return; // Allow signup to proceed in dev mode
+    }
+    
+    // In production, throw an error
+    throw new ConvexError(`Failed to send verification email: ${error instanceof Error ? error.message : "Email sending failed"}`);
   }
 }
+
+console.log("Initializing Convex Auth...");
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
@@ -80,6 +104,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   ],
   callbacks: {
     async createOrUpdateUser(ctx: MutationCtx, args) {
+      console.log("createOrUpdateUser called with args:", JSON.stringify(args, null, 2));
       if (args.existingUserId) {
         return args.existingUserId;
       }
@@ -94,13 +119,18 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
         .unique();
 
       if (existingUser) {
+        // Update image if it's from Google and we don't have one or it's different
+        // But be careful not to overwrite custom uploaded images if we can't distinguish
+        // For now, just return existing user
         return existingUser._id;
       }
 
       // Create new user
       const newUserId = await ctx.db.insert("users", {
         email,
-        role: "patient", // Default role
+        name: args.profile.name as string | undefined,
+        image: args.profile.picture as string | undefined,
+        role: "patient",
         profileCompleted: false,
         emailVerified: true,
       });

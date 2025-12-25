@@ -20,7 +20,18 @@ export const currentUser = query({
     // If user has an image (storageId), get the URL
     let imageUrl = null;
     if (user.image) {
-      imageUrl = await ctx.storage.getUrl(user.image as any);
+      // Check if it's an external URL (e.g. from Google)
+      if (user.image.startsWith("http") || user.image.startsWith("https")) {
+        imageUrl = user.image;
+      } else {
+        // Assume it's a storage ID
+        try {
+          imageUrl = await ctx.storage.getUrl(user.image as any);
+        } catch (e) {
+          console.error("Failed to get storage URL for image:", user.image);
+          imageUrl = null;
+        }
+      }
     }
 
     return { ...user, imageUrl };
