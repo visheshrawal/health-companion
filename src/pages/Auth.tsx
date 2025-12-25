@@ -274,9 +274,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             else if (flow === "forgotPassword") handleForgotPassword(e);
             else if (flow === "resetPassword") handleResetPassword(e);
           }}>
-            {/* Email Input - Hidden during verify/resetPassword if we want to keep it clean, but usually good to show what email is being used. 
-                However, for resetPassword flow, we need email. For verify, we need email. 
-                Let's keep it visible but disabled for verify/resetPassword to avoid confusion. */}
+            {/* Email Input */}
             {(flow === "signIn" || flow === "signUp" || flow === "forgotPassword") && (
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>

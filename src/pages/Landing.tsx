@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router";
 import { 
@@ -62,12 +61,7 @@ export default function Landing() {
       </nav>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-6xl space-y-12 pb-20"
-        >
+        <div className="max-w-6xl space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="space-y-8 max-w-3xl mx-auto">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent pb-2">
               Healthcare Simplified.
@@ -102,7 +96,7 @@ export default function Landing() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </main>
 
       <footer className="p-6 text-center text-muted-foreground text-sm">
