@@ -87,6 +87,10 @@ Watching our parents manage medications, struggle with confusing medical advice,
 │ • Gemini AI • Google Maps • Twilio SMS │
 └─────────────────────────────────────────────────────────────┘
 
+## Screenshots 
+![Alt Text](health-companion/Screenshots/IMG-20251225-WA0016.jpg)
+
+![Alt Text](C:\Users\vrawa\Documents\GitHub\health-companion\Screenshots\IMG-20251225-WA0016.jpg)
 ## 🚀 Getting Started
 
 ### Prerequisites
