@@ -69,7 +69,7 @@ Watching our parents manage medications, struggle with confusing medical advice,
 ## 📱 Screenshots
 | Patient Dashboard | Symptom Analyzer | Doctor Prescription |
 |-------------------|------------------|---------------------|
-| ![Dashboard](https://via.placeholder.com/300x200/4A90E2/FFFFFF?text=Medication+Tracker) | ![Symptom](https://via.placeholder.com/300x200/7ED321/FFFFFF?text=AI+Symptom+Checker) | ![Prescription](https://via.placeholder.com/300x200/9013FE/FFFFFF?text=Digital+Prescription) |
+| ![Dashboard](https://drive.google.com/file/d/154UBT8ZELZIA5BTBbyxfaXMR56E_Nz7x/view?usp=drive_link) | ![Symptom](https://via.placeholder.com/300x200/7ED321/FFFFFF?text=AI+Symptom+Checker) | ![Prescription](https://via.placeholder.com/300x200/9013FE/FFFFFF?text=Digital+Prescription) |
 
 ## 🏗️ Architecture
 ┌─────────────────────────────────────────────────────────────┐
@@ -102,7 +102,7 @@ Watching our parents manage medications, struggle with confusing medical advice,
 ### Installation
 ```bash
 # Clone repository
-git clone https://github.com/your-username/health-companion.git
+git clone https://github.com/visheshrawal/health-companion.git
 cd health-companion
 
 # Install dependencies
