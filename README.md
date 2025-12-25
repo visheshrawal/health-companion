@@ -163,10 +163,10 @@ Multi-language Support
 Clinical Trial Matching
 
 👥 Team
-Built with ❤️ for the Google Developer Student Clubs Hackathon 2024
+Built with ❤️ for the Google Developer Student Clubs Hackathon 2025
 
-Team Members:
-
+Team Members: Vishesh Rawal , Himanshu Raghav , Paulson Fernandes
+Vishesh Rawal
 THE III LAWS(Broken)- Chief Developer 
 
 📄 License
