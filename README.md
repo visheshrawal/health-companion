@@ -76,13 +76,17 @@ Watching our parents manage medications, struggle with confusing medical advice,
 │ Frontend (React + Vite) │
 │ • Patient/Doctor Dashboards • Real-time UI Updates │
 └───────────────┬─────────────────────────────────────────────┘
+
 │ HTTPS / WebSocket
+
 ┌───────────────▼─────────────────────────────────────────────┐
 │ Backend (Convex Serverless) │
 │ • Authentication & Authorization • Real-time Database │
 │ • Prescription Logic • Appointment Scheduling │
 └───────────────┬─────────────────────────────────────────────┘
+
 │ API Calls
+
 ┌───────────────▼─────────────────────────────────────────────┐
 │ External Services │
 │ • Gemini AI • Google Maps • Twilio SMS │
