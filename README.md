@@ -15,8 +15,10 @@ Watching our parents manage medications, struggle with confusing medical advice,
 **Demo Credentials:**
 - 👤 **Patient:** `vrawal2007.vr@gmail.com` / `Vrawal@2007`
 - 🩺 **Doctor:** `vishulevel@gmail.com` / `Vrawal@2007`
+*Use the doctor login and patient login button directly to login and use the demo mode button to test full functionality*
 
 *Note: Using development environment for hackathon demo stability*
+
 
 ## 🚀 Key Features
 
