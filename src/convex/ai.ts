@@ -2,9 +2,11 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
+import { vly } from "@/lib/vly-integrations";
 
 const GEMINI_API_KEY = "AIzaSyBTGQCS8i9yydgvBx6sS79DIYV4ygdVePc";
 
+// Keep Gemini fallback for audio processing only as Vly might not support audio yet
 const generateContentWithFallback = async (contents: any[]) => {
   // Fallback strategy: gemini-2.5-flash -> gemini-1.5-flash
   const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
@@ -73,7 +75,19 @@ export const analyzeSymptoms = action({
     `;
 
     try {
-      const textResponse = await generateContentWithFallback([{ parts: [{ text: prompt }] }]);
+      // Use Vly AI Integration
+      const result = await vly.ai.completion({
+        model: "gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        maxTokens: 1000,
+      });
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "AI request failed");
+      }
+
+      const textResponse = result.data.choices[0]?.message?.content;
+      if (!textResponse) throw new Error("No content received from AI");
 
       // Clean up potential markdown code blocks and extract JSON
       let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();

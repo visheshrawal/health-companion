@@ -164,16 +164,25 @@ export const DEMO_APPOINTMENTS: any[] = [
 export function useDemoMode() {
   const [isDemoMode, setIsDemoMode] = useState(() => {
     if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('health-companion-demo-mode');
-      return stored ? JSON.parse(stored) : false;
+      try {
+        const stored = localStorage.getItem('health-companion-demo-mode');
+        return stored ? JSON.parse(stored) : false;
+      } catch (e) {
+        console.warn("LocalStorage access denied:", e);
+        return false;
+      }
     }
     return false;
   });
 
   useEffect(() => {
     const handleStorageChange = () => {
-      const stored = localStorage.getItem('health-companion-demo-mode');
-      setIsDemoMode(stored ? JSON.parse(stored) : false);
+      try {
+        const stored = localStorage.getItem('health-companion-demo-mode');
+        setIsDemoMode(stored ? JSON.parse(stored) : false);
+      } catch (e) {
+        // Ignore errors
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
@@ -188,8 +197,12 @@ export function useDemoMode() {
   const toggleDemoMode = () => {
     const newState = !isDemoMode;
     setIsDemoMode(newState);
-    localStorage.setItem('health-companion-demo-mode', JSON.stringify(newState));
-    window.dispatchEvent(new Event('demo-mode-change'));
+    try {
+      localStorage.setItem('health-companion-demo-mode', JSON.stringify(newState));
+      window.dispatchEvent(new Event('demo-mode-change'));
+    } catch (e) {
+      console.warn("LocalStorage write denied:", e);
+    }
   };
 
   return { isDemoMode, toggleDemoMode };
