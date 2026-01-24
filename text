@@ -1,0 +1,4 @@
+1. Run `npx convex run test_email_manual:send` to find the correct email endpoint.
+2. Run `npx convex run ai:testGemini` to verify AI functionality.
+3. Based on the results, update `src/convex/auth.ts` with the correct email endpoint.
+4. Inform the user about the fixes.

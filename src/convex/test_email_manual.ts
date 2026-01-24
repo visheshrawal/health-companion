@@ -9,42 +9,53 @@ export const send = action({
       return { success: false, error: "VLY_INTEGRATION_KEY not set" };
     }
 
-    console.log("Testing manual email send...");
+    console.log("Testing manual email send with multiple URLs...");
     
-    // Only test the correct endpoint
-    const url = "https://integrations.vly.ai/v1/email/send";
+    const urls = [
+      "https://api.vly.ai/v1/email/send",
+      "https://api.vly.ai/v1/emails/send",
+      "https://api.vly.ai/email/send",
+      "https://vly.ai/api/v1/email/send",
+      "https://integrations.vly.ai/v1/email/send"
+    ];
 
-    console.log(`Trying URL: ${url}`);
-    try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey.trim()}`,
-          "X-Vly-Version": "0.1.0",
-        },
-        body: JSON.stringify({
-          to: ["test@example.com"],
-          from: "Health Companion <noreply@vly.io>",
-          subject: `Test Email Manual`,
-          html: "<p>This is a test email.</p>",
-          text: "This is a test email.",
-        }),
-      });
+    const results = [];
 
-      const text = await response.text();
-      console.log(`Response status for ${url}:`, response.status);
-      
-      if (response.ok) {
-        console.log("SUCCESS with URL:", url);
-        return { success: true, url, result: JSON.parse(text) };
-      } else {
-        console.log(`Failed with ${url}: ${text}`);
-        return { success: false, error: `Failed: ${response.status} ${text}` };
+    for (const url of urls) {
+      console.log(`Trying URL: ${url}`);
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey.trim()}`,
+            "X-Vly-Version": "0.1.0",
+          },
+          body: JSON.stringify({
+            to: ["test@example.com"],
+            from: "Health Companion <noreply@vly.io>",
+            subject: `Test Email Manual ${url}`,
+            html: "<p>This is a test email.</p>",
+            text: "This is a test email.",
+          }),
+        });
+
+        const text = await response.text();
+        console.log(`Response status for ${url}:`, response.status);
+        
+        if (response.ok) {
+          console.log("SUCCESS with URL:", url);
+          results.push({ url, success: true, result: JSON.parse(text) });
+        } else {
+          console.log(`Failed with ${url}: ${text}`);
+          results.push({ url, success: false, status: response.status, error: text });
+        }
+      } catch (e: any) {
+        console.error(`Error with ${url}:`, e.message);
+        results.push({ url, success: false, error: e.message });
       }
-    } catch (e: any) {
-      console.error(`Error with ${url}:`, e.message);
-      return { success: false, error: e.message };
     }
+    
+    return { results };
   }
 });

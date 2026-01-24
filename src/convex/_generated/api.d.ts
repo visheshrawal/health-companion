@@ -26,8 +26,10 @@ import type * as prescriptions from "../prescriptions.js";
 import type * as reset_test_user from "../reset_test_user.js";
 import type * as sos from "../sos.js";
 import type * as sosLogs from "../sosLogs.js";
+import type * as test_ai from "../test_ai.js";
 import type * as test_auth from "../test_auth.js";
 import type * as test_email from "../test_email.js";
+import type * as test_email_debug from "../test_email_debug.js";
 import type * as test_email_manual from "../test_email_manual.js";
 import type * as users from "../users.js";
 
@@ -56,8 +58,10 @@ declare const fullApi: ApiFromModules<{
   reset_test_user: typeof reset_test_user;
   sos: typeof sos;
   sosLogs: typeof sosLogs;
+  test_ai: typeof test_ai;
   test_auth: typeof test_auth;
   test_email: typeof test_email;
+  test_email_debug: typeof test_email_debug;
   test_email_manual: typeof test_email_manual;
   users: typeof users;
 }>;

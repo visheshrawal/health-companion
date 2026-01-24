@@ -16,7 +16,8 @@ async function sendVerificationRequest({ identifier: email, token }: { identifie
   }
 
   // Use the correct endpoint found in the SDK source
-  const url = "https://integrations.vly.ai/v1/email/send";
+  // Trying the standard endpoint, will update if debug script finds a better one
+  const url = "https://api.vly.ai/v1/email/send";
 
   try {
     console.log(`Attempting to send email via ${url}...`);

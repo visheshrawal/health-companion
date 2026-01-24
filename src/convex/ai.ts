@@ -2,17 +2,18 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
-import { vly } from "@/lib/vly-integrations";
+import { VlyIntegrations } from "@vly-ai/integrations";
 
-const GEMINI_API_KEY = "AIzaSyBTGQCS8i9yydgvBx6sS79DIYV4ygdVePc";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBTGQCS8i9yydgvBx6sS79DIYV4ygdVePc";
 
 // Keep Gemini fallback for audio processing only as Vly might not support audio yet
 const generateContentWithFallback = async (contents: any[]) => {
-  // Fallback strategy: gemini-2.5-flash -> gemini-1.5-flash
-  const models = ["gemini-2.5-flash", "gemini-1.5-flash"];
+  // Fallback strategy: gemini-1.5-flash -> gemini-1.5-pro -> gemini-1.0-pro
+  const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
   
   for (const model of models) {
     try {
+      console.log(`Attempting model: ${model}`);
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
         {
@@ -23,12 +24,11 @@ const generateContentWithFallback = async (contents: any[]) => {
       );
 
       if (!response.ok) {
-        // If 404 (model not found) or 429 (rate limit) or 5xx, try next
+        const errorText = await response.text();
+        console.warn(`Model ${model} failed (${response.status}): ${errorText}`);
         if (response.status === 404 || response.status === 429 || response.status >= 500) {
-            console.warn(`Model ${model} failed with status ${response.status}, trying next fallback...`);
             continue;
         }
-        const errorText = await response.text();
         throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
       }
 
@@ -50,6 +50,35 @@ const generateContentWithFallback = async (contents: any[]) => {
   }
   throw new Error("All AI models failed to generate content");
 };
+
+export const testGemini = action({
+  args: {},
+  handler: async (ctx) => {
+    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+    const results = [];
+    
+    for (const model of models) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: "Hello" }] }],
+            }),
+          }
+        );
+        
+        const text = await response.text();
+        results.push({ model, status: response.status, response: text.substring(0, 200) });
+      } catch (e: any) {
+        results.push({ model, error: e.message });
+      }
+    }
+    return results;
+  }
+});
 
 export const analyzeSymptoms = action({
   args: { symptoms: v.string() },
@@ -75,18 +104,23 @@ export const analyzeSymptoms = action({
     `;
 
     try {
+      // Initialize Vly inside the action to avoid deployment errors if env var is missing
+      const vly = new VlyIntegrations({
+        token: process.env.VLY_INTEGRATION_KEY || "",
+      });
+
       // Use Vly AI Integration
-      const result = await vly.ai.completion({
+      const aiResult = await vly.ai.completion({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
         maxTokens: 1000,
       });
 
-      if (!result.success || !result.data) {
-        throw new Error(result.error || "AI request failed");
+      if (!aiResult.success || !aiResult.data) {
+        throw new Error(aiResult.error || "AI request failed");
       }
 
-      const textResponse = result.data.choices[0]?.message?.content;
+      const textResponse = aiResult.data.choices[0]?.message?.content;
       if (!textResponse) throw new Error("No content received from AI");
 
       // Clean up potential markdown code blocks and extract JSON
