@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { VlyIntegrations } from "@vly-ai/integrations";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyBTGQCS8i9yydgvBx6sS79DIYV4ygdVePc";
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyDEXULpkt5A7GyrUHjstQ-XMvfUE5tHLOU";
 
 // Keep Gemini fallback for audio processing only as Vly might not support audio yet
 const generateContentWithFallback = async (contents: any[]) => {
