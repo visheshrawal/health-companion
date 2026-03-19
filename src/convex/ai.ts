@@ -54,7 +54,7 @@ const generateContentWithFallback = async (contents: any[]) => {
 export const testGemini = action({
   args: {},
   handler: async (ctx) => {
-    const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+    const models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2-flash"];
     const results = [];
     
     for (const model of models) {
