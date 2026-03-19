@@ -9,7 +9,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyDEXULpkt5A7GyrUHjstQ
 // Keep Gemini fallback for audio processing only as Vly might not support audio yet
 const generateContentWithFallback = async (contents: any[]) => {
   // Fallback strategy: gemini-1.5-flash -> gemini-1.5-pro -> gemini-1.0-pro
-  const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro"];
+  const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-pro"];
   
   for (const model of models) {
     try {
