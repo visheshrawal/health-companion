@@ -4,13 +4,25 @@ import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import { VlyIntegrations } from "@vly-ai/integrations";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyDEXULpkt5A7GyrUHjstQ-XMvfUE5tHLOU";
+// SECURITY FIX: Removed the hardcoded API key
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Keep Gemini fallback for audio processing only as Vly might not support audio yet
-const generateContentWithFallback = async (contents: any[]) => {
-  // Fallback strategy: gemini-1.5-flash -> gemini-1.5-pro -> gemini-1.0-pro
-  const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-3.1-pro"];
+// Added expectJson parameter to enforce strict JSON responses from Gemini
+const generateContentWithFallback = async (contents: any[], expectJson: boolean = false) => {
+  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is missing from environment variables");
+
+  // FIX: Updated to valid Gemini models
+  const models = ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
   
+  const bodyPayload: any = { contents };
+  
+  // Enforce JSON output if requested
+  if (expectJson) {
+    bodyPayload.generationConfig = {
+      responseMimeType: "application/json"
+    };
+  }
+
   for (const model of models) {
     try {
       console.log(`Attempting model: ${model}`);
@@ -19,7 +31,7 @@ const generateContentWithFallback = async (contents: any[]) => {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ contents }),
+          body: JSON.stringify(bodyPayload),
         }
       );
 
@@ -54,7 +66,8 @@ const generateContentWithFallback = async (contents: any[]) => {
 export const testGemini = action({
   args: {},
   handler: async (ctx) => {
-    const models = ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2-flash"];
+    // FIX: Updated to valid Gemini models
+    const models = ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"];
     const results = [];
     
     for (const model of models) {
@@ -104,12 +117,10 @@ export const analyzeSymptoms = action({
     `;
 
     try {
-      // Initialize Vly inside the action to avoid deployment errors if env var is missing
       const vly = new VlyIntegrations({
         token: process.env.VLY_INTEGRATION_KEY || "",
       });
 
-      // Use Vly AI Integration
       const aiResult = await vly.ai.completion({
         model: "gpt-4o-mini",
         messages: [{ role: "user", content: prompt }],
@@ -123,14 +134,13 @@ export const analyzeSymptoms = action({
       const textResponse = aiResult.data.choices[0]?.message?.content;
       if (!textResponse) throw new Error("No content received from AI");
 
-      // Clean up potential markdown code blocks and extract JSON
+      // Keeping regex for Vly just in case gpt-4o-mini returns markdown ticks
       let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
 
       const result = JSON.parse(jsonString);
       return result;
     } catch (error: any) {
       console.error("Error analyzing symptoms:", error);
-      // Propagate the actual error message for debugging
       throw new Error(`Analysis failed: ${error.message || String(error)}`);
     }
   },
@@ -149,41 +159,20 @@ export const generateAppointmentSummary = action({
         "symptomSeverity": "low" | "moderate" | "severe",
         "suggestedPriority": "low" | "medium" | "high"
       }
-
-      Rules:
-      - Keep the summary concise and professional.
-      - Do not include markdown formatting (like \`\`\`json), just the raw JSON string.
     `;
 
     try {
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
+      // Replaced fetch with our helper to utilize the fallback and clean JSON handling
+      const textResponse = await generateContentWithFallback(
+        [{ parts: [{ text: prompt }] }],
+        true // Enforce JSON
       );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-      const textResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!textResponse) throw new Error("No response content from AI");
-
-      let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-
-      const result = JSON.parse(jsonString);
+      // No regex needed anymore, guaranteed JSON
+      const result = JSON.parse(textResponse);
       return result;
     } catch (error: any) {
       console.error("Error generating appointment summary:", error);
-      // Propagate the actual error message for debugging
       throw new Error(`Summary generation failed: ${error.message || String(error)}`);
     }
   },
@@ -195,21 +184,18 @@ export const processConsultationRecording = action({
     storageId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
-    // 1. Get the file URL
     const fileUrl = await ctx.runQuery(internal.consultations.getRecordingUrl, { 
       storageId: args.storageId 
     });
 
     if (!fileUrl) throw new Error("Could not get file URL");
 
-    // 2. Fetch the audio file
     const fileResponse = await fetch(fileUrl);
     if (!fileResponse.ok) throw new Error("Failed to download audio file");
     
     const arrayBuffer = await fileResponse.arrayBuffer();
     const base64Audio = Buffer.from(arrayBuffer).toString("base64");
 
-    // 3. Get appointment details to know who the patient/doctor are
     const appointment = await ctx.runQuery(internal.appointments.getInternal, { id: args.appointmentId });
     if (!appointment) throw new Error("Appointment not found");
 
@@ -229,30 +215,32 @@ export const processConsultationRecording = action({
         "advice": "...",
         "followUp": "..."
       }
-      
-      Do not include markdown formatting (like \`\`\`json), just the raw JSON string.
     `;
 
     try {
-      const aiResponse = await generateContentWithFallback(
+      // FIX: Payload structure corrected. Text and inlineData are siblings inside a single 'parts' array.
+      const textResponse = await generateContentWithFallback(
         [
-          { parts: [{ text: prompt }] },
           {
-            inlineData: {
-              mimeType: "audio/mp3", // Assuming MP3 or compatible audio
-              data: base64Audio
-            }
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "audio/mp3",
+                  data: base64Audio
+                }
+              }
+            ]
           }
-        ]
+        ],
+        true // Enforce JSON
       );
 
-      let jsonString = aiResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-
-      const result = JSON.parse(jsonString);
+      // No regex needed anymore
+      const result = JSON.parse(textResponse);
       return result;
     } catch (error: any) {
       console.error("Error processing consultation recording:", error);
-      // Propagate the actual error message for debugging
       throw new Error(`Processing failed: ${error.message || String(error)}`);
     }
   },
@@ -272,19 +260,19 @@ export const simplifyConsultation = action({
         "warningSigns": ["Warning 1", "Warning 2"],
         "encouragement": "Motivation encouragement"
       }
-      
-      Do not include markdown formatting (like \`\`\`json), just the raw JSON string.
     `;
 
     try {
-      const textResponse = await generateContentWithFallback([{ parts: [{ text: prompt }] }]);
-      let jsonString = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-
-      const result = JSON.parse(jsonString);
+      const textResponse = await generateContentWithFallback(
+        [{ parts: [{ text: prompt }] }],
+        true // Enforce JSON
+      );
+      
+      // No regex needed anymore
+      const result = JSON.parse(textResponse);
       return result;
     } catch (error: any) {
       console.error("Error simplifying consultation:", error);
-      // Propagate the actual error message for debugging
       throw new Error(`Simplification failed: ${error.message || String(error)}`);
     }
   },
